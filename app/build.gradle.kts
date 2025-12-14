@@ -104,6 +104,12 @@ android {
     }
 }
 
+configurations.configureEach {
+    resolutionStrategy {
+        force("com.github.duolingo:rtl-viewpager:2.0.0")
+    }
+}
+
 dependencies {
     implementation(libs.simple.tools.commons)
     implementation(libs.androidx.constraintlayout)
