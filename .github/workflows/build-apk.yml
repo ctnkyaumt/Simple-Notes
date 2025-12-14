@@ -1,0 +1,37 @@
+name: Build APK (ARM)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Core Release APK (armv7 + arm64)
+        run: ./gradlew :app:assembleCoreRelease
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-core-release-arm
+          if-no-files-found: error
+          path: |
+            app/build/outputs/apk/core/release/*.apk
+            app/build/outputs/apk/core/release/*/*.apk
