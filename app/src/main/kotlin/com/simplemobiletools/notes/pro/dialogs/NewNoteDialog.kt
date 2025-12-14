@@ -12,8 +12,15 @@ import com.simplemobiletools.notes.pro.extensions.notesDB
 import com.simplemobiletools.notes.pro.models.Note
 import com.simplemobiletools.notes.pro.models.NoteType
 
-class NewNoteDialog(val activity: Activity, title: String? = null, val setChecklistAsDefault: Boolean, callback: (note: Note) -> Unit) {
+class NewNoteDialog(
+    val activity: Activity,
+    title: String? = null,
+    val setChecklistAsDefault: Boolean,
+    notebookId: Long = 0L,
+    callback: (note: Note) -> Unit
+) {
     init {
+        val targetNotebookId = if (notebookId > 0L) notebookId else activity.config.currentNotebookId
         val binding = DialogNewNoteBinding.inflate(activity.layoutInflater).apply {
             val defaultType = when {
                 setChecklistAsDefault -> typeChecklist.id
@@ -37,7 +44,7 @@ class NewNoteDialog(val activity: Activity, title: String? = null, val setCheckl
                         ensureBackgroundThread {
                             when {
                                 newTitle.isEmpty() -> activity.toast(R.string.no_title)
-                                activity.notesDB.getNoteIdWithTitle(newTitle) != null -> activity.toast(R.string.title_taken)
+                                activity.notesDB.getNoteIdWithTitleInNotebook(newTitle, targetNotebookId) != null -> activity.toast(R.string.title_taken)
                                 else -> {
                                     val type = if (binding.newNoteType.checkedRadioButtonId == binding.typeChecklist.id) {
                                         NoteType.TYPE_CHECKLIST
@@ -46,7 +53,16 @@ class NewNoteDialog(val activity: Activity, title: String? = null, val setCheckl
                                     }
 
                                     activity.config.lastCreatedNoteType = type.value
-                                    val newNote = Note(null, newTitle, "", type, "", PROTECTION_NONE, "")
+                                    val newNote = Note(
+                                        id = null,
+                                        notebookId = targetNotebookId,
+                                        title = newTitle,
+                                        value = "",
+                                        type = type,
+                                        path = "",
+                                        protectionType = PROTECTION_NONE,
+                                        protectionHash = ""
+                                    )
                                     callback(newNote)
                                     alertDialog.dismiss()
                                 }

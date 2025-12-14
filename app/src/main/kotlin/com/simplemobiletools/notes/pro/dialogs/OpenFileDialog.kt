@@ -46,7 +46,15 @@ class OpenFileDialog(val activity: SimpleActivity, val path: String, val callbac
 
     private fun saveNote(storeContent: String, storePath: String) {
         val filename = path.getFilenameFromPath()
-        val note = Note(null, filename, storeContent, NoteType.TYPE_TEXT, storePath, PROTECTION_NONE, "")
+        val note = Note(
+            id = null,
+            title = filename,
+            value = storeContent,
+            type = NoteType.TYPE_TEXT,
+            path = storePath,
+            protectionType = PROTECTION_NONE,
+            protectionHash = ""
+        )
         callback(note)
         dialog?.dismiss()
     }

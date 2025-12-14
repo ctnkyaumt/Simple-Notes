@@ -14,6 +14,17 @@
     <string name="pick_a_note">Pick a note</string>
     <string name="rename_note">Rename note</string>
     <string name="general_note">General note</string>
+    <string name="notebooks">Notebooks</string>
+    <string name="new_notebook">New notebook</string>
+    <string name="rename_notebook">Rename notebook</string>
+    <string name="lock_notebook">Lock notebook</string>
+    <string name="unlock_notebook">Unlock notebook</string>
+    <string name="notebook_password_only">Notebooks can be locked only with a password.</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm password</string>
+    <string name="empty_password">Password cannot be empty</string>
+    <string name="passwords_do_not_match">Passwords do not match</string>
+    <string name="wrong_password">Wrong password</string>
     <string name="create_new_note">Create a new note</string>
     <string name="add_to_note">Add to note</string>
     <string name="unsaved_changes_warning">You have some unsaved changes. What do you want to do with them?</string>

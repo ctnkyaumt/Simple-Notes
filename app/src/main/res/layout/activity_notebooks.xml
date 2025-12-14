@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/notebooks_coordinator"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/notebooks_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/color_primary"
+        app:menu="@menu/menu_notebooks"
+        app:title="@string/notebooks"
+        app:titleTextAppearance="@style/AppTheme.ActionBar.TitleTextStyle" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/notebooks_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:clipToPadding="false"
+        android:padding="@dimen/medium_margin" />
+
+    <com.simplemobiletools.commons.views.MyFloatingActionButton
+        android:id="@+id/new_notebook_fab"
+        android:layout_width="@dimen/fab_size"
+        android:layout_height="@dimen/fab_size"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/activity_margin"
+        android:src="@drawable/ic_plus_vector" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

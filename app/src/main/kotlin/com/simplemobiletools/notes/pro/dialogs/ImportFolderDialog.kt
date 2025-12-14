@@ -46,7 +46,7 @@ class ImportFolderDialog(val activity: SimpleActivity, val path: String, val cal
                 file.isDirectory -> false
                 filename.isMediaFile() -> false
                 file.length() > 1000 * 1000 -> false
-                activity.notesDB.getNoteIdWithTitle(filename) != null -> false
+                activity.notesDB.getNoteIdWithTitleInNotebook(filename, activity.config.currentNotebookId) != null -> false
                 else -> true
             }
         }?.forEach {
@@ -75,7 +75,16 @@ class ImportFolderDialog(val activity: SimpleActivity, val path: String, val cal
     }
 
     private fun saveNote(title: String, value: String, type: NoteType, path: String) {
-        val note = Note(null, title, value, type, path, PROTECTION_NONE, "")
+        val note = Note(
+            id = null,
+            notebookId = activity.config.currentNotebookId,
+            title = title,
+            value = value,
+            type = type,
+            path = path,
+            protectionType = PROTECTION_NONE,
+            protectionHash = ""
+        )
         NotesHelper(activity).insertOrUpdateNote(note)
     }
 }

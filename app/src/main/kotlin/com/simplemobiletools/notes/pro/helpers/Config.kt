@@ -47,6 +47,10 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getLong(CURRENT_NOTE_ID, 1L)
         set(id) = prefs.edit().putLong(CURRENT_NOTE_ID, id).apply()
 
+    var currentNotebookId: Long
+        get() = prefs.getLong(CURRENT_NOTEBOOK_ID, 1L)
+        set(id) = prefs.edit().putLong(CURRENT_NOTEBOOK_ID, id).apply()
+
     var widgetNoteId: Long
         get() = prefs.getLong(WIDGET_NOTE_ID, 1L)
         set(id) = prefs.edit().putLong(WIDGET_NOTE_ID, id).apply()

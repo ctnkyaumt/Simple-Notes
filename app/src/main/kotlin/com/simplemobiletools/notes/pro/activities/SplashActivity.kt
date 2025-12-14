@@ -12,7 +12,7 @@ class SplashActivity : BaseSplashActivity() {
                 startActivity(this)
             }
         } else {
-            startActivity(Intent(this, MainActivity::class.java))
+            startActivity(Intent(this, NotebooksActivity::class.java))
         }
         finish()
     }

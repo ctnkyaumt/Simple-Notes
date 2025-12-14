@@ -19,7 +19,8 @@ import java.io.File
 @Entity(tableName = "notes", indices = [(Index(value = ["id"], unique = true))])
 @TypeConverters(NoteTypeConverter::class)
 data class Note(
-    @PrimaryKey(autoGenerate = true) var id: Long?,
+    @PrimaryKey(autoGenerate = true) var id: Long? = null,
+    @ColumnInfo(name = "notebook_id") var notebookId: Long = 1L,
     @ColumnInfo(name = "title") var title: String,
     @ColumnInfo(name = "value") var value: String,
     @ColumnInfo(name = "type") var type: NoteType,

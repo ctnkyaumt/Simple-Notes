@@ -64,6 +64,7 @@ class MainActivity : SimpleActivity() {
     private lateinit var mCurrentNote: Note
     private var mNotes = listOf<Note>()
     private var mAdapter: NotesPagerAdapter? = null
+    private var currentNotebookId: Long = 1L
     private var noteViewWithTextSelected: MyEditText? = null
     private var saveNoteButton: MenuItem? = null
 
@@ -98,8 +99,21 @@ class MainActivity : SimpleActivity() {
         searchNextBtn = findViewById(com.simplemobiletools.commons.R.id.search_next)
         searchClearBtn = findViewById(com.simplemobiletools.commons.R.id.search_clear)
 
+        currentNotebookId = intent.getLongExtra(NOTEBOOK_ID, config.currentNotebookId).takeIf { it > 0L } ?: 1L
+
         val noteToOpen = intent.getLongExtra(OPEN_NOTE_ID, -1L)
-        initViewPager(noteToOpen)
+        if (noteToOpen > 0L) {
+            NotesHelper(this).getNoteWithId(noteToOpen) { note ->
+                if (note != null) {
+                    currentNotebookId = note.notebookId
+                    config.currentNotebookId = currentNotebookId
+                }
+                initViewPager(noteToOpen)
+            }
+        } else {
+            config.currentNotebookId = currentNotebookId
+            initViewPager(noteToOpen)
+        }
         binding.pagerTabStrip.drawFullUnderline = false
         val textSize = getPercentageFontSize()
         binding.pagerTabStrip.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize)
@@ -135,7 +149,7 @@ class MainActivity : SimpleActivity() {
             initViewPager()
         }
 
-        NotesHelper(this).getNotes { lastestNotes ->
+        NotesHelper(this).getNotesInNotebook(currentNotebookId) { lastestNotes ->
             if (mNotes.size != lastestNotes.size) {
                 initViewPager()
             }
@@ -290,8 +304,21 @@ class MainActivity : SimpleActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         val wantedNoteId = intent.getLongExtra(OPEN_NOTE_ID, -1L)
-        binding.viewPager.currentItem = getWantedNoteIndex(wantedNoteId)
-        checkIntents(intent)
+        if (wantedNoteId > 0L) {
+            NotesHelper(this).getNoteWithId(wantedNoteId) { note ->
+                if (note != null && note.notebookId != currentNotebookId) {
+                    currentNotebookId = note.notebookId
+                    config.currentNotebookId = currentNotebookId
+                    initViewPager(wantedNoteId)
+                } else {
+                    binding.viewPager.currentItem = getWantedNoteIndex(wantedNoteId)
+                }
+                checkIntents(intent)
+            }
+        } else {
+            binding.viewPager.currentItem = getWantedNoteIndex(wantedNoteId)
+            checkIntents(intent)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, resultData: Intent?) {
@@ -377,10 +404,28 @@ class MainActivity : SimpleActivity() {
                         val file = File(realPath)
                         handleUri(Uri.fromFile(file))
                     } else if (intent.getBooleanExtra(NEW_TEXT_NOTE, false)) {
-                        val newTextNote = Note(null, getCurrentFormattedDateTime(), "", NoteType.TYPE_TEXT, "", PROTECTION_NONE, "")
+                        val newTextNote = Note(
+                            id = null,
+                            notebookId = currentNotebookId,
+                            title = getCurrentFormattedDateTime(),
+                            value = "",
+                            type = NoteType.TYPE_TEXT,
+                            path = "",
+                            protectionType = PROTECTION_NONE,
+                            protectionHash = ""
+                        )
                         addNewNote(newTextNote)
                     } else if (intent.getBooleanExtra(NEW_CHECKLIST, false)) {
-                        val newChecklist = Note(null, getCurrentFormattedDateTime(), "", NoteType.TYPE_CHECKLIST, "", PROTECTION_NONE, "")
+                        val newChecklist = Note(
+                            id = null,
+                            notebookId = currentNotebookId,
+                            title = getCurrentFormattedDateTime(),
+                            value = "",
+                            type = NoteType.TYPE_CHECKLIST,
+                            path = "",
+                            protectionType = PROTECTION_NONE,
+                            protectionHash = ""
+                        )
                         addNewNote(newChecklist)
                     } else {
                         handleUri(data!!)
@@ -401,7 +446,7 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun handleTextIntent(text: String) {
-        NotesHelper(this).getNotes {
+        NotesHelper(this).getNotesInNotebook(currentNotebookId) {
             val notes = it
             val list = arrayListOf<RadioItem>().apply {
                 add(RadioItem(0, getString(R.string.create_new_note)))
@@ -428,7 +473,7 @@ class MainActivity : SimpleActivity() {
                 return@getNoteIdWithPath
             }
 
-            NotesHelper(this).getNotes {
+            NotesHelper(this).getNotesInNotebook(currentNotebookId) {
                 mNotes = it
                 importUri(uri)
             }
@@ -436,7 +481,7 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun initViewPager(wantedNoteId: Long? = null) {
-        NotesHelper(this).getNotes { notes ->
+        NotesHelper(this).getNotesInNotebook(currentNotebookId) { notes ->
             notes.filter { it.shouldBeUnlocked(this) }
                 .forEach(::removeProtection)
 
@@ -603,7 +648,7 @@ class MainActivity : SimpleActivity() {
     private fun updateSelectedNote(id: Long) {
         config.currentNoteId = id
         if (mNotes.isEmpty()) {
-            NotesHelper(this).getNotes {
+            NotesHelper(this).getNotesInNotebook(currentNotebookId) {
                 mNotes = it
                 updateSelectedNote(id)
             }
@@ -615,7 +660,7 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun displayNewNoteDialog(value: String = "", title: String? = null, path: String = "", setChecklistAsDefault: Boolean = false) {
-        NewNoteDialog(this, title, setChecklistAsDefault) {
+        NewNoteDialog(this, title, setChecklistAsDefault, notebookId = currentNotebookId) {
             it.value = value
             it.path = path
             addNewNote(it)
@@ -689,7 +734,16 @@ class MainActivity : SimpleActivity() {
                     val checklistItems = fileText.parseChecklistItems()
                     if (checklistItems != null) {
                         val title = it.absolutePath.getFilenameFromPath().substringBeforeLast('.')
-                        val note = Note(null, title, fileText, NoteType.TYPE_CHECKLIST, "", PROTECTION_NONE, "")
+                        val note = Note(
+                            id = null,
+                            notebookId = currentNotebookId,
+                            title = title,
+                            value = fileText,
+                            type = NoteType.TYPE_CHECKLIST,
+                            path = "",
+                            protectionType = PROTECTION_NONE,
+                            protectionHash = ""
+                        )
                         runOnUiThread {
                             OpenFileDialog(this, it.path) {
                                 displayNewNoteDialog(note.value, title = it.title, it.path, setChecklistAsDefault = true)
@@ -793,7 +847,16 @@ class MainActivity : SimpleActivity() {
 
         val noteType = if (checklistItems != null) NoteType.TYPE_CHECKLIST else NoteType.TYPE_TEXT
         if (!canSyncNoteWithFile) {
-            val note = Note(null, noteTitle, content, noteType, "", PROTECTION_NONE, "")
+            val note = Note(
+                id = null,
+                notebookId = currentNotebookId,
+                title = noteTitle,
+                value = content,
+                type = noteType,
+                path = "",
+                protectionType = PROTECTION_NONE,
+                protectionHash = ""
+            )
             displayNewNoteDialog(note.value, title = noteTitle, "")
         } else {
             val items = arrayListOf(
@@ -804,7 +867,16 @@ class MainActivity : SimpleActivity() {
             RadioGroupDialog(this, items) {
                 val syncFile = it as Int == IMPORT_FILE_SYNC
                 val path = if (syncFile) uri.toString() else ""
-                val note = Note(null, noteTitle, content, noteType, "", PROTECTION_NONE, "")
+                val note = Note(
+                    id = null,
+                    notebookId = currentNotebookId,
+                    title = noteTitle,
+                    value = content,
+                    type = noteType,
+                    path = "",
+                    protectionType = PROTECTION_NONE,
+                    protectionHash = ""
+                )
                 displayNewNoteDialog(note.value, title = noteTitle, path)
             }
         }
@@ -817,9 +889,27 @@ class MainActivity : SimpleActivity() {
                 val fileText = it.readText().trim()
                 val checklistItems = fileText.parseChecklistItems()
                 val note = if (checklistItems != null) {
-                    Note(null, title.substringBeforeLast('.'), fileText, NoteType.TYPE_CHECKLIST, "", PROTECTION_NONE, "")
+                    Note(
+                        id = null,
+                        notebookId = currentNotebookId,
+                        title = title.substringBeforeLast('.'),
+                        value = fileText,
+                        type = NoteType.TYPE_CHECKLIST,
+                        path = "",
+                        protectionType = PROTECTION_NONE,
+                        protectionHash = ""
+                    )
                 } else {
-                    Note(null, title, "", NoteType.TYPE_TEXT, path, PROTECTION_NONE, "")
+                    Note(
+                        id = null,
+                        notebookId = currentNotebookId,
+                        title = title,
+                        value = "",
+                        type = NoteType.TYPE_TEXT,
+                        path = path,
+                        protectionType = PROTECTION_NONE,
+                        protectionHash = ""
+                    )
                 }
 
                 if (mNotes.any { it.title.equals(note.title, true) }) {
@@ -839,7 +929,7 @@ class MainActivity : SimpleActivity() {
                 FilePickerDialog(this, pickFile = false, canAddShowHiddenButton = true) {
                     openFolder(it) {
                         ImportFolderDialog(this, it.path) {
-                            NotesHelper(this).getNotes {
+                            NotesHelper(this).getNotesInNotebook(currentNotebookId) {
                                 mNotes = it
                                 showSaveButton = false
                                 initViewPager()
@@ -1105,7 +1195,7 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun refreshNotes(note: Note, deleteFile: Boolean) {
-        NotesHelper(this).getNotes {
+        NotesHelper(this).getNotesInNotebook(currentNotebookId) {
             mNotes = it
             val noteId = note.id
             updateSelectedNote(noteId!!)
@@ -1131,7 +1221,7 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun displayOpenNoteDialog() {
-        OpenNoteDialog(this) { noteId, newNote ->
+        OpenNoteDialog(this, currentNotebookId) { noteId, newNote ->
             if (newNote == null) {
                 updateSelectedNote(noteId)
             } else {

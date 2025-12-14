@@ -16,6 +16,7 @@ import com.simplemobiletools.notes.pro.R
 import com.simplemobiletools.notes.pro.databases.NotesDatabase
 import com.simplemobiletools.notes.pro.dialogs.UnlockNotesDialog
 import com.simplemobiletools.notes.pro.helpers.*
+import com.simplemobiletools.notes.pro.interfaces.NotebooksDao
 import com.simplemobiletools.notes.pro.interfaces.NotesDao
 import com.simplemobiletools.notes.pro.interfaces.WidgetsDao
 import com.simplemobiletools.notes.pro.models.Note
@@ -27,6 +28,8 @@ import java.io.FileOutputStream
 val Context.config: Config get() = Config.newInstance(applicationContext)
 
 val Context.notesDB: NotesDao get() = NotesDatabase.getInstance(applicationContext).NotesDao()
+
+val Context.notebooksDB: NotebooksDao get() = NotesDatabase.getInstance(applicationContext).NotebooksDao()
 
 val Context.widgetsDB: WidgetsDao get() = NotesDatabase.getInstance(applicationContext).WidgetsDao()
 

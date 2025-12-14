@@ -5,6 +5,7 @@ import org.joda.time.DateTime
 
 const val NOTE_ID = "note_id"
 const val OPEN_NOTE_ID = "open_note_id"
+const val NOTEBOOK_ID = "notebook_id"
 const val DONE_CHECKLIST_ITEM_ALPHA = 0.4f
 const val CUSTOMIZED_WIDGET_ID = "customized_widget_id"
 const val CUSTOMIZED_WIDGET_KEY_ID = "customized_widget_key_id"
@@ -20,6 +21,7 @@ val DEFAULT_WIDGET_TEXT_COLOR = Color.parseColor("#FFF57C00")
 
 // shared preferences
 const val CURRENT_NOTE_ID = "current_note_id"
+const val CURRENT_NOTEBOOK_ID = "current_notebook_id"
 const val AUTOSAVE_NOTES = "autosave_notes"
 const val DISPLAY_SUCCESS = "display_success"
 const val CLICKABLE_LINKS = "clickable_links"

@@ -12,7 +12,7 @@ import com.simplemobiletools.notes.pro.databinding.DialogOpenNoteBinding
 import com.simplemobiletools.notes.pro.helpers.NotesHelper
 import com.simplemobiletools.notes.pro.models.Note
 
-class OpenNoteDialog(val activity: BaseSimpleActivity, val callback: (checkedId: Long, newNote: Note?) -> Unit) {
+class OpenNoteDialog(val activity: BaseSimpleActivity, private val notebookId: Long, val callback: (checkedId: Long, newNote: Note?) -> Unit) {
     private var dialog: AlertDialog? = null
 
     init {
@@ -21,7 +21,7 @@ class OpenNoteDialog(val activity: BaseSimpleActivity, val callback: (checkedId:
         val noteItemWidth = activity.resources.getDimensionPixelSize(R.dimen.grid_note_item_width)
         binding.dialogOpenNoteList.layoutManager = AutoStaggeredGridLayoutManager(noteItemWidth, StaggeredGridLayoutManager.VERTICAL)
 
-        NotesHelper(activity).getNotes {
+        NotesHelper(activity).getNotesInNotebook(notebookId) {
             initDialog(it, binding)
         }
     }
@@ -34,7 +34,7 @@ class OpenNoteDialog(val activity: BaseSimpleActivity, val callback: (checkedId:
         }
 
         binding.newNoteFab.setOnClickListener {
-            NewNoteDialog(activity, setChecklistAsDefault = false) {
+            NewNoteDialog(activity, setChecklistAsDefault = false, notebookId = notebookId) {
                 callback(0, it)
                 dialog?.dismiss()
             }

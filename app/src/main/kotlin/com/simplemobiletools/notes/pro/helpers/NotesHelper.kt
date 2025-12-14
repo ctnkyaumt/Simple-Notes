@@ -41,7 +41,40 @@ class NotesHelper(val context: Context) {
 
             if (notes.isEmpty()) {
                 val generalNote = context.resources.getString(R.string.general_note)
-                val note = Note(null, generalNote, "", NoteType.TYPE_TEXT, "", PROTECTION_NONE, "")
+                val note = Note(
+                    id = null,
+                    title = generalNote,
+                    value = "",
+                    type = NoteType.TYPE_TEXT,
+                    path = "",
+                    protectionType = PROTECTION_NONE,
+                    protectionHash = ""
+                )
+                context.notesDB.insertOrUpdate(note)
+                notes.add(note)
+            }
+
+            Handler(Looper.getMainLooper()).post {
+                callback(notes)
+            }
+        }
+    }
+
+    fun getNotesInNotebook(notebookId: Long, callback: (notes: List<Note>) -> Unit) {
+        ensureBackgroundThread {
+            val notes = context.notesDB.getNotesInNotebook(notebookId).toMutableList()
+            if (notes.isEmpty()) {
+                val generalNote = context.resources.getString(R.string.general_note)
+                val note = Note(
+                    id = null,
+                    notebookId = notebookId,
+                    title = generalNote,
+                    value = "",
+                    type = NoteType.TYPE_TEXT,
+                    path = "",
+                    protectionType = PROTECTION_NONE,
+                    protectionHash = ""
+                )
                 context.notesDB.insertOrUpdate(note)
                 notes.add(note)
             }
