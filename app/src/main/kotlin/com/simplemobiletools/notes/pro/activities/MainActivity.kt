@@ -702,11 +702,18 @@ class MainActivity : SimpleActivity() {
         setChecklistAsDefault: Boolean = false,
         cancelCallback: (() -> Unit)? = null
     ) {
-        NewNoteDialog(this, title, setChecklistAsDefault, notebookId = currentNotebookId, cancelCallback = cancelCallback) {
-            it.value = value
-            it.path = path
-            addNewNote(it)
-        }
+        NewNoteDialog(
+            activity = this,
+            title = title,
+            setChecklistAsDefault = setChecklistAsDefault,
+            notebookId = currentNotebookId,
+            callback = { note ->
+                note.value = value
+                note.path = path
+                addNewNote(note)
+            },
+            cancelCallback = cancelCallback
+        )
     }
 
     private fun addNewNote(note: Note) {

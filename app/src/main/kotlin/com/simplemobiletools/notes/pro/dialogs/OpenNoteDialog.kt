@@ -34,10 +34,15 @@ class OpenNoteDialog(val activity: BaseSimpleActivity, private val notebookId: L
         }
 
         binding.newNoteFab.setOnClickListener {
-            NewNoteDialog(activity, setChecklistAsDefault = false, notebookId = notebookId) {
-                callback(0, it)
-                dialog?.dismiss()
-            }
+            NewNoteDialog(
+                activity = activity,
+                setChecklistAsDefault = false,
+                notebookId = notebookId,
+                callback = { note ->
+                    callback(0, note)
+                    dialog?.dismiss()
+                }
+            )
         }
 
         activity.getAlertDialogBuilder()
