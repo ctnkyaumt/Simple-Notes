@@ -21,9 +21,6 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Gradle cache
-        uses: gradle/actions/setup-gradle@v3
-
       - name: Build Core Debug APK (armv7 + arm64)
         run: ./gradlew :app:assembleCoreDebug
 
