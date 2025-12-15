@@ -77,6 +77,9 @@ class MainActivity : SimpleActivity() {
     private var searchMatches = emptyList<Int>()
     private var isSearchActive = false
 
+    private var pendingFirstNotePrompt = false
+    private var shouldDeletePlaceholderAfterFirstRealNote = false
+
     private lateinit var searchQueryET: MyEditText
     private lateinit var searchPrevBtn: ImageView
     private lateinit var searchNextBtn: ImageView
@@ -100,6 +103,8 @@ class MainActivity : SimpleActivity() {
         searchClearBtn = findViewById(com.simplemobiletools.commons.R.id.search_clear)
 
         currentNotebookId = intent.getLongExtra(NOTEBOOK_ID, config.currentNotebookId).takeIf { it > 0L } ?: 1L
+        pendingFirstNotePrompt = intent.getBooleanExtra(OPEN_NEW_NOTE_DIALOG, false)
+        shouldDeletePlaceholderAfterFirstRealNote = pendingFirstNotePrompt
 
         val noteToOpen = intent.getLongExtra(OPEN_NOTE_ID, -1L)
         if (noteToOpen > 0L) {
@@ -281,7 +286,9 @@ class MainActivity : SimpleActivity() {
     }
 
     override fun onBackPressed() {
-        if (!config.autosaveNotes && mAdapter?.anyHasUnsavedChanges() == true) {
+        if (isSearchActive) {
+            closeSearch()
+        } else if (!config.autosaveNotes && mAdapter?.anyHasUnsavedChanges() == true) {
             ConfirmationAdvancedDialog(
                 this,
                 "",
@@ -294,9 +301,13 @@ class MainActivity : SimpleActivity() {
                 }
                 super.onBackPressed()
             }
-        } else if (isSearchActive) {
-            closeSearch()
         } else {
+            if (config.autosaveNotes && mAdapter?.anyHasUnsavedChanges() == true) {
+                mAdapter?.saveAllFragmentTexts()
+                if (::mCurrentNote.isInitialized) {
+                    noteSavedSuccessfully(mCurrentNote.title)
+                }
+            }
             super.onBackPressed()
         }
     }
@@ -504,7 +515,32 @@ class MainActivity : SimpleActivity() {
                 hideKeyboard()
             }
             refreshMenuItems()
+
+            if (pendingFirstNotePrompt && mNotes.size == 1 && isPlaceholderNote(mNotes[0])) {
+                pendingFirstNotePrompt = false
+                displayNewNoteDialog(cancelCallback = ::onFirstNoteDialogCanceled)
+            }
         }
+    }
+
+    private fun onFirstNoteDialogCanceled() {
+        if (mNotes.size == 1 && isPlaceholderNote(mNotes[0])) {
+            val placeholder = mNotes[0]
+            ensureBackgroundThread {
+                notesDB.deleteNote(placeholder)
+            }
+        }
+
+        shouldDeletePlaceholderAfterFirstRealNote = false
+        finish()
+    }
+
+    private fun isPlaceholderNote(note: Note): Boolean {
+        return note.notebookId == currentNotebookId &&
+            note.title == getString(R.string.general_note) &&
+            note.value.isEmpty() &&
+            note.path.isEmpty() &&
+            note.type == NoteType.TYPE_TEXT
     }
 
     private fun setupSearchButtons() {
@@ -659,8 +695,14 @@ class MainActivity : SimpleActivity() {
         }
     }
 
-    private fun displayNewNoteDialog(value: String = "", title: String? = null, path: String = "", setChecklistAsDefault: Boolean = false) {
-        NewNoteDialog(this, title, setChecklistAsDefault, notebookId = currentNotebookId) {
+    private fun displayNewNoteDialog(
+        value: String = "",
+        title: String? = null,
+        path: String = "",
+        setChecklistAsDefault: Boolean = false,
+        cancelCallback: (() -> Unit)? = null
+    ) {
+        NewNoteDialog(this, title, setChecklistAsDefault, notebookId = currentNotebookId, cancelCallback = cancelCallback) {
             it.value = value
             it.path = path
             addNewNote(it)
@@ -668,15 +710,32 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun addNewNote(note: Note) {
-        NotesHelper(this).insertOrUpdateNote(note) {
-            val newNoteId = it
-            showSaveButton = false
-            showUndoButton = false
-            showRedoButton = false
-            initViewPager(newNoteId)
-            updateSelectedNote(newNoteId)
-            binding.viewPager.onGlobalLayout {
-                mAdapter?.focusEditText(getNoteIndexWithId(newNoteId))
+        NotesHelper(this).insertOrUpdateNote(note) { newNoteId ->
+            if (shouldDeletePlaceholderAfterFirstRealNote && mNotes.size == 1 && isPlaceholderNote(mNotes[0])) {
+                val placeholder = mNotes[0]
+                ensureBackgroundThread {
+                    notesDB.deleteNote(placeholder)
+                    runOnUiThread {
+                        shouldDeletePlaceholderAfterFirstRealNote = false
+                        showSaveButton = false
+                        showUndoButton = false
+                        showRedoButton = false
+                        initViewPager(newNoteId)
+                        updateSelectedNote(newNoteId)
+                        binding.viewPager.onGlobalLayout {
+                            mAdapter?.focusEditText(getNoteIndexWithId(newNoteId))
+                        }
+                    }
+                }
+            } else {
+                showSaveButton = false
+                showUndoButton = false
+                showRedoButton = false
+                initViewPager(newNoteId)
+                updateSelectedNote(newNoteId)
+                binding.viewPager.onGlobalLayout {
+                    mAdapter?.focusEditText(getNoteIndexWithId(newNoteId))
+                }
             }
         }
     }

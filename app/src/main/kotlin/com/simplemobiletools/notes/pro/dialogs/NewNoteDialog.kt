@@ -17,7 +17,8 @@ class NewNoteDialog(
     title: String? = null,
     val setChecklistAsDefault: Boolean,
     notebookId: Long = 0L,
-    callback: (note: Note) -> Unit
+    callback: (note: Note) -> Unit,
+    cancelCallback: (() -> Unit)? = null
 ) {
     init {
         val targetNotebookId = if (notebookId > 0L) notebookId else activity.config.currentNotebookId
@@ -33,12 +34,19 @@ class NewNoteDialog(
 
         binding.lockedNoteTitle.setText(title)
 
+        var noteCreated = false
         activity.getAlertDialogBuilder()
             .setPositiveButton(com.simplemobiletools.commons.R.string.ok, null)
             .setNegativeButton(com.simplemobiletools.commons.R.string.cancel, null)
             .apply {
                 activity.setupDialogStuff(binding.root, this, R.string.new_note) { alertDialog ->
                     alertDialog.showKeyboard(binding.lockedNoteTitle)
+                    alertDialog.setOnDismissListener {
+                        if (!noteCreated) {
+                            cancelCallback?.invoke()
+                        }
+                    }
+
                     alertDialog.getButton(BUTTON_POSITIVE).setOnClickListener {
                         val newTitle = binding.lockedNoteTitle.value
                         ensureBackgroundThread {
@@ -63,6 +71,7 @@ class NewNoteDialog(
                                         protectionType = PROTECTION_NONE,
                                         protectionHash = ""
                                     )
+                                    noteCreated = true
                                     callback(newNote)
                                     alertDialog.dismiss()
                                 }

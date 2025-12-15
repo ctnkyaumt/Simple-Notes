@@ -29,6 +29,9 @@ interface NotesDao {
     @Query("SELECT id FROM notes WHERE notebook_id = :notebookId AND title = :title")
     fun getNoteIdWithTitleCaseSensitiveInNotebook(title: String, notebookId: Long): Long?
 
+    @Query("UPDATE notes SET notebook_id = :targetNotebookId WHERE notebook_id = :sourceNotebookId")
+    fun moveNotesToNotebook(sourceNotebookId: Long, targetNotebookId: Long)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertOrUpdate(note: Note): Long
 

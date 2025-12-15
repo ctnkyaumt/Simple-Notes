@@ -6,6 +6,7 @@ import org.joda.time.DateTime
 const val NOTE_ID = "note_id"
 const val OPEN_NOTE_ID = "open_note_id"
 const val NOTEBOOK_ID = "notebook_id"
+const val OPEN_NEW_NOTE_DIALOG = "open_new_note_dialog"
 const val DONE_CHECKLIST_ITEM_ALPHA = 0.4f
 const val CUSTOMIZED_WIDGET_ID = "customized_widget_id"
 const val CUSTOMIZED_WIDGET_KEY_ID = "customized_widget_key_id"

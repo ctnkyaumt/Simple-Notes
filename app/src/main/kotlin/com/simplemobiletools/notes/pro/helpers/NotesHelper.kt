@@ -63,7 +63,8 @@ class NotesHelper(val context: Context) {
     fun getNotesInNotebook(notebookId: Long, callback: (notes: List<Note>) -> Unit) {
         ensureBackgroundThread {
             val notes = context.notesDB.getNotesInNotebook(notebookId).toMutableList()
-            if (notes.isEmpty()) {
+
+            if (notes.isEmpty() && notebookId == 1L) {
                 val generalNote = context.resources.getString(R.string.general_note)
                 val note = Note(
                     id = null,

@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.GridLayoutManager
 import com.simplemobiletools.commons.extensions.*
+import com.simplemobiletools.commons.helpers.ensureBackgroundThread
 import com.simplemobiletools.commons.helpers.LICENSE_RTL
 import com.simplemobiletools.commons.helpers.PROTECTION_NONE
 import com.simplemobiletools.notes.pro.BuildConfig
@@ -16,10 +17,14 @@ import com.simplemobiletools.notes.pro.dialogs.RenameNotebookDialog
 import com.simplemobiletools.notes.pro.dialogs.SetNotebookPasswordDialog
 import com.simplemobiletools.notes.pro.dialogs.UnlockNotebookPasswordDialog
 import com.simplemobiletools.notes.pro.extensions.config
+import com.simplemobiletools.notes.pro.extensions.notesDB
+import com.simplemobiletools.notes.pro.helpers.OPEN_NEW_NOTE_DIALOG
 import com.simplemobiletools.notes.pro.helpers.NOTEBOOK_ID
 import com.simplemobiletools.notes.pro.helpers.NotebooksHelper
 import com.simplemobiletools.notes.pro.helpers.NotesHelper
+import com.simplemobiletools.notes.pro.models.Note
 import com.simplemobiletools.notes.pro.models.Notebook
+import com.simplemobiletools.notes.pro.models.NoteType
 
 class NotebooksActivity : SimpleActivity() {
     private val binding by viewBinding(ActivityNotebooksBinding::inflate)
@@ -55,8 +60,9 @@ class NotebooksActivity : SimpleActivity() {
             NewNotebookDialog(this) { notebook ->
                 NotebooksHelper(this).insertOrUpdateNotebook(notebook) { id ->
                     notebook.id = id
-                    createInitialNoteIfNeeded(id, notebook.title)
-                    openNotebook(notebook)
+                    createInitialNoteIfNeeded(id) {
+                        openNotebookUnlocked(notebook, promptForFirstNote = true)
+                    }
                 }
             }
         }
@@ -93,12 +99,25 @@ class NotebooksActivity : SimpleActivity() {
         }
     }
 
-    private fun showNotebookActions(notebook: Notebook) {
-        val options = if (notebook.isLocked()) {
-            arrayOf(getString(R.string.rename_notebook), getString(R.string.unlock_notebook))
-        } else {
-            arrayOf(getString(R.string.rename_notebook), getString(R.string.lock_notebook))
+    private fun openNotebookUnlocked(notebook: Notebook, promptForFirstNote: Boolean) {
+        config.currentNotebookId = notebook.id ?: 1L
+        Intent(this, MainActivity::class.java).apply {
+            putExtra(NOTEBOOK_ID, config.currentNotebookId)
+            if (promptForFirstNote) {
+                putExtra(OPEN_NEW_NOTE_DIALOG, true)
+            }
+            startActivity(this)
         }
+    }
+
+    private fun showNotebookActions(notebook: Notebook) {
+        val options = mutableListOf<String>().apply {
+            add(getString(R.string.rename_notebook))
+            add(if (notebook.isLocked()) getString(R.string.unlock_notebook) else getString(R.string.lock_notebook))
+            if (notebook.id != 1L) {
+                add(getString(R.string.delete_notebook))
+            }
+        }.toTypedArray()
 
         AlertDialog.Builder(this)
             .setItems(options) { _, which ->
@@ -110,9 +129,38 @@ class NotebooksActivity : SimpleActivity() {
                     }
                     getString(R.string.lock_notebook) -> lockNotebook(notebook)
                     getString(R.string.unlock_notebook) -> unlockNotebook(notebook)
+                    getString(R.string.delete_notebook) -> deleteNotebook(notebook)
                 }
             }
             .show()
+    }
+
+    private fun deleteNotebook(notebook: Notebook) {
+        if (notebook.id == 1L) {
+            toast(R.string.cannot_delete_default_notebook)
+            return
+        }
+
+        val notebookTitle = notebook.title
+        val message = String.format(getString(R.string.delete_notebook_prompt_message), notebookTitle)
+        com.simplemobiletools.commons.dialogs.ConfirmationDialog(
+            this,
+            message,
+            0,
+            com.simplemobiletools.commons.R.string.ok,
+            com.simplemobiletools.commons.R.string.cancel
+        ) {
+            val notebookId = notebook.id ?: return@ConfirmationDialog
+            ensureBackgroundThread {
+                notesDB.moveNotesToNotebook(sourceNotebookId = notebookId, targetNotebookId = 1L)
+                NotebooksHelper(this).deleteNotebook(notebook) {
+                    if (config.currentNotebookId == notebookId) {
+                        config.currentNotebookId = 1L
+                    }
+                    refreshNotebooks()
+                }
+            }
+        }
     }
 
     private fun lockNotebook(notebook: Notebook) {
@@ -147,8 +195,21 @@ class NotebooksActivity : SimpleActivity() {
         }
     }
 
-    private fun createInitialNoteIfNeeded(notebookId: Long, notebookTitle: String) {
-        NotesHelper(this).getNotesInNotebook(notebookId) { }
+    private fun createInitialNoteIfNeeded(notebookId: Long, callback: () -> Unit) {
+        val note = Note(
+            id = null,
+            notebookId = notebookId,
+            title = getString(R.string.general_note),
+            value = "",
+            type = NoteType.TYPE_TEXT,
+            path = "",
+            protectionType = PROTECTION_NONE,
+            protectionHash = ""
+        )
+
+        NotesHelper(this).insertOrUpdateNote(note) {
+            callback()
+        }
     }
 
     private fun launchAbout() {
