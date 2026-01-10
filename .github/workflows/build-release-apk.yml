@@ -35,7 +35,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > app-release.keystore
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > app/app-release.keystore
 
             cat > keystore.properties <<EOF
           keyAlias=$ANDROID_KEY_ALIAS
