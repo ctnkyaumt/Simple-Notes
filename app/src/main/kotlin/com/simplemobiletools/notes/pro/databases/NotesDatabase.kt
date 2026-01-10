@@ -65,18 +65,16 @@ abstract class NotesDatabase : RoomDatabase() {
                     "INSERT OR IGNORE INTO notebooks(id, title, protection_type, protection_hash) VALUES(1, ?, $PROTECTION_NONE, '')",
                     arrayOf(context.getString(R.string.general_note))
                 )
+
                 val generalNote = context.resources.getString(R.string.general_note)
-                val note = Note(
-                    id = null,
-                    notebookId = 1L,
-                    title = generalNote,
-                    value = "",
-                    type = NoteType.TYPE_TEXT,
-                    path = "",
-                    protectionType = PROTECTION_NONE,
-                    protectionHash = ""
+                db!!.openHelper.writableDatabase.execSQL(
+                    """
+                    INSERT INTO notes (notebook_id, title, value, type, path, protection_type, protection_hash)
+                    SELECT 1, ?, '', ?, '', $PROTECTION_NONE, ''
+                    WHERE NOT EXISTS (SELECT 1 FROM notes WHERE notebook_id = 1)
+                    """.trimIndent(),
+                    arrayOf(generalNote, NoteType.TYPE_TEXT.value)
                 )
-                db!!.NotesDao().insertOrUpdate(note)
             }
         }
 

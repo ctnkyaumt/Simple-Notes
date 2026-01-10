@@ -223,7 +223,6 @@ class MainActivity : SimpleActivity() {
             findItem(R.id.import_folder).isVisible = !isQPlus()
             findItem(R.id.lock_note).isVisible = mNotes.isNotEmpty() && (::mCurrentNote.isInitialized && !mCurrentNote.isLocked())
             findItem(R.id.unlock_note).isVisible = mNotes.isNotEmpty() && (::mCurrentNote.isInitialized && mCurrentNote.isLocked())
-            findItem(R.id.more_apps_from_us).isVisible = !resources.getBoolean(com.simplemobiletools.commons.R.bool.hide_google_relations)
 
             findItem(R.id.new_note).isVisible = !isGeneralNotebook()
 
@@ -259,7 +258,6 @@ class MainActivity : SimpleActivity() {
                 R.id.export_as_file -> fragment?.handleUnlocking { tryExportAsFile() }
                 R.id.print -> fragment?.handleUnlocking { printText() }
                 R.id.delete_note -> fragment?.handleUnlocking { displayDeleteNotePrompt() }
-                R.id.more_apps_from_us -> launchMoreAppsFromUsIntent()
                 R.id.settings -> launchSettings()
                 R.id.about -> launchAbout()
                 R.id.remove_done_items -> fragment?.handleUnlocking { removeDoneItems() }
@@ -772,21 +770,12 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun launchAbout() {
-        val licenses = LICENSE_RTL
-
-        val faqItems = arrayListOf(
-            FAQItem(com.simplemobiletools.commons.R.string.faq_1_title_commons, com.simplemobiletools.commons.R.string.faq_1_text_commons),
-            FAQItem(R.string.faq_1_title, R.string.faq_1_text)
-        )
-
-        if (!resources.getBoolean(com.simplemobiletools.commons.R.bool.hide_google_relations)) {
-            faqItems.add(FAQItem(com.simplemobiletools.commons.R.string.faq_2_title_commons, com.simplemobiletools.commons.R.string.faq_2_text_commons))
-            faqItems.add(FAQItem(com.simplemobiletools.commons.R.string.faq_6_title_commons, com.simplemobiletools.commons.R.string.faq_6_text_commons))
-            faqItems.add(FAQItem(com.simplemobiletools.commons.R.string.faq_7_title_commons, com.simplemobiletools.commons.R.string.faq_7_text_commons))
-            faqItems.add(FAQItem(com.simplemobiletools.commons.R.string.faq_10_title_commons, com.simplemobiletools.commons.R.string.faq_10_text_commons))
-        }
-
-        startAboutActivity(R.string.app_name, licenses, BuildConfig.VERSION_NAME, faqItems, true)
+        val message = "${getString(R.string.app_name)}\n${BuildConfig.VERSION_NAME}"
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.about)
+            .setMessage(message)
+            .setPositiveButton(com.simplemobiletools.commons.R.string.ok, null)
+            .show()
     }
 
     private fun tryOpenFile() {

@@ -52,7 +52,7 @@ class NotebooksActivity : SimpleActivity() {
             }
         }
 
-        binding.notebooksList.layoutManager = GridLayoutManager(this, 2)
+        binding.notebooksList.layoutManager = GridLayoutManager(this, config.notebookColumns)
 
         adapter = NotebooksAdapter(emptyList(), itemClick = { openNotebook(it) }, itemLongClick = { showNotebookActions(it) })
         binding.notebooksList.adapter = adapter
@@ -72,6 +72,8 @@ class NotebooksActivity : SimpleActivity() {
     override fun onResume() {
         super.onResume()
         setupToolbar(binding.notebooksToolbar)
+
+        (binding.notebooksList.layoutManager as? GridLayoutManager)?.spanCount = config.notebookColumns
         ensureDefaultNotebookExists {
             refreshNotebooks()
         }
@@ -93,20 +95,20 @@ class NotebooksActivity : SimpleActivity() {
                 }
             }
 
-            val existingNotes = notesDB.getNotesInNotebook(1L)
-            if (existingNotes.isEmpty()) {
-                val note = Note(
-                    id = null,
-                    notebookId = 1L,
-                    title = generalNoteTitle,
-                    value = "",
-                    type = NoteType.TYPE_TEXT,
-                    path = "",
-                    protectionType = PROTECTION_NONE,
-                    protectionHash = ""
-                )
-                notesDB.insertOrUpdate(note)
-            }
+            notesDB.insertNoteIfNotebookEmpty(
+                notebookId = 1L,
+                title = generalNoteTitle,
+                value = "",
+                type = NoteType.TYPE_TEXT.value,
+                path = "",
+                protectionType = PROTECTION_NONE,
+                protectionHash = ""
+            )
+            notesDB.deleteDuplicateEmptyNotesInNotebook(
+                notebookId = 1L,
+                title = generalNoteTitle,
+                type = NoteType.TYPE_TEXT.value
+            )
 
             runOnUiThread(callback)
         }
@@ -250,20 +252,11 @@ class NotebooksActivity : SimpleActivity() {
     }
 
     private fun launchAbout() {
-        val licenses = LICENSE_RTL
-
-        val faqItems = arrayListOf(
-            com.simplemobiletools.commons.models.FAQItem(com.simplemobiletools.commons.R.string.faq_1_title_commons, com.simplemobiletools.commons.R.string.faq_1_text_commons),
-            com.simplemobiletools.commons.models.FAQItem(R.string.faq_1_title, R.string.faq_1_text)
-        )
-
-        if (!resources.getBoolean(com.simplemobiletools.commons.R.bool.hide_google_relations)) {
-            faqItems.add(com.simplemobiletools.commons.models.FAQItem(com.simplemobiletools.commons.R.string.faq_2_title_commons, com.simplemobiletools.commons.R.string.faq_2_text_commons))
-            faqItems.add(com.simplemobiletools.commons.models.FAQItem(com.simplemobiletools.commons.R.string.faq_6_title_commons, com.simplemobiletools.commons.R.string.faq_6_text_commons))
-            faqItems.add(com.simplemobiletools.commons.models.FAQItem(com.simplemobiletools.commons.R.string.faq_7_title_commons, com.simplemobiletools.commons.R.string.faq_7_text_commons))
-            faqItems.add(com.simplemobiletools.commons.models.FAQItem(com.simplemobiletools.commons.R.string.faq_10_title_commons, com.simplemobiletools.commons.R.string.faq_10_text_commons))
-        }
-
-        startAboutActivity(R.string.app_name, licenses, BuildConfig.VERSION_NAME, faqItems, true)
+        val message = "${getString(R.string.app_name)}\n${BuildConfig.VERSION_NAME}"
+        AlertDialog.Builder(this)
+            .setTitle(R.string.about)
+            .setMessage(message)
+            .setPositiveButton(com.simplemobiletools.commons.R.string.ok, null)
+            .show()
     }
 }

@@ -54,6 +54,7 @@ class SettingsActivity : SimpleActivity() {
         setupShowWordCount()
         setupEnableLineWrap()
         setupFontSize()
+        setupNotebookColumns()
         setupGravity()
         setupCursorPlacement()
         setupIncognitoMode()
@@ -221,6 +222,17 @@ class SettingsActivity : SimpleActivity() {
     }
 
     private fun getFontSizePercentText(fontSizePercentage: Int): String = "$fontSizePercentage%"
+
+    private fun setupNotebookColumns() {
+        binding.settingsNotebookColumns.text = config.notebookColumns.toString()
+        binding.settingsNotebookColumnsHolder.setOnClickListener {
+            val items = (1..4).map { RadioItem(it, it.toString()) }
+            RadioGroupDialog(this@SettingsActivity, ArrayList(items), config.notebookColumns) {
+                config.notebookColumns = it as Int
+                binding.settingsNotebookColumns.text = config.notebookColumns.toString()
+            }
+        }
+    }
 
     private fun setupGravity() {
         binding.settingsGravity.text = getGravityText()

@@ -96,4 +96,8 @@ class Config(context: Context) : BaseConfig(context) {
     var addNewChecklistItemsTop: Boolean
         get() = prefs.getBoolean(ADD_NEW_CHECKLIST_ITEMS_TOP, false)
         set(addNewCheckListItemsTop) = prefs.edit().putBoolean(ADD_NEW_CHECKLIST_ITEMS_TOP, addNewCheckListItemsTop).apply()
+
+    var notebookColumns: Int
+        get() = prefs.getInt(NOTEBOOK_COLUMNS, 2).coerceIn(1, 4)
+        set(notebookColumns) = prefs.edit().putInt(NOTEBOOK_COLUMNS, notebookColumns.coerceIn(1, 4)).apply()
 }

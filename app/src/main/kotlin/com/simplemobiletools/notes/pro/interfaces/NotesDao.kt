@@ -32,6 +32,48 @@ interface NotesDao {
     @Query("UPDATE notes SET notebook_id = :targetNotebookId WHERE notebook_id = :sourceNotebookId")
     fun moveNotesToNotebook(sourceNotebookId: Long, targetNotebookId: Long)
 
+    @Query(
+        """
+        INSERT INTO notes (notebook_id, title, value, type, path, protection_type, protection_hash)
+        SELECT :notebookId, :title, :value, :type, :path, :protectionType, :protectionHash
+        WHERE NOT EXISTS (SELECT 1 FROM notes WHERE notebook_id = :notebookId)
+        """
+    )
+    fun insertNoteIfNotebookEmpty(
+        notebookId: Long,
+        title: String,
+        value: String,
+        type: Int,
+        path: String,
+        protectionType: Int,
+        protectionHash: String
+    )
+
+    @Query(
+        """
+        DELETE FROM notes
+        WHERE notebook_id = :notebookId
+          AND title = :title COLLATE NOCASE
+          AND value = ''
+          AND path = ''
+          AND type = :type
+          AND id NOT IN (
+              SELECT MIN(id)
+              FROM notes
+              WHERE notebook_id = :notebookId
+                AND title = :title COLLATE NOCASE
+                AND value = ''
+                AND path = ''
+                AND type = :type
+          )
+        """
+    )
+    fun deleteDuplicateEmptyNotesInNotebook(
+        notebookId: Long,
+        title: String,
+        type: Int
+    )
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertOrUpdate(note: Note): Long
 

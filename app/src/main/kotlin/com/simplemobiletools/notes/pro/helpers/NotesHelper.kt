@@ -41,17 +41,21 @@ class NotesHelper(val context: Context) {
 
             if (notes.isEmpty()) {
                 val generalNote = context.resources.getString(R.string.general_note)
-                val note = Note(
-                    id = null,
+                context.notesDB.insertNoteIfNotebookEmpty(
+                    notebookId = 1L,
                     title = generalNote,
                     value = "",
-                    type = NoteType.TYPE_TEXT,
+                    type = NoteType.TYPE_TEXT.value,
                     path = "",
                     protectionType = PROTECTION_NONE,
                     protectionHash = ""
                 )
-                context.notesDB.insertOrUpdate(note)
-                notes.add(note)
+                context.notesDB.deleteDuplicateEmptyNotesInNotebook(
+                    notebookId = 1L,
+                    title = generalNote,
+                    type = NoteType.TYPE_TEXT.value
+                )
+                notes.addAll(context.notesDB.getNotes())
             }
 
             Handler(Looper.getMainLooper()).post {
@@ -66,18 +70,21 @@ class NotesHelper(val context: Context) {
 
             if (notes.isEmpty() && notebookId == 1L) {
                 val generalNote = context.resources.getString(R.string.general_note)
-                val note = Note(
-                    id = null,
+                context.notesDB.insertNoteIfNotebookEmpty(
                     notebookId = notebookId,
                     title = generalNote,
                     value = "",
-                    type = NoteType.TYPE_TEXT,
+                    type = NoteType.TYPE_TEXT.value,
                     path = "",
                     protectionType = PROTECTION_NONE,
                     protectionHash = ""
                 )
-                context.notesDB.insertOrUpdate(note)
-                notes.add(note)
+                context.notesDB.deleteDuplicateEmptyNotesInNotebook(
+                    notebookId = notebookId,
+                    title = generalNote,
+                    type = NoteType.TYPE_TEXT.value
+                )
+                notes.addAll(context.notesDB.getNotesInNotebook(notebookId))
             }
 
             Handler(Looper.getMainLooper()).post {
