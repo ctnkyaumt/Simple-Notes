@@ -1,0 +1,67 @@
+name: Build Release APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-release-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Decode keystore (optional)
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > app-release.keystore
+
+            cat > keystore.properties <<EOF
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          storeFile=app-release.keystore
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          EOF
+
+            echo "Keystore configured. Release APKs will be signed."
+          else
+            echo "No keystore secrets provided. Release APKs will be unsigned (still fine for size comparison)."
+          fi
+
+      - name: Build Core Release APK (armv7 + arm64)
+        run: ./gradlew :app:assembleCoreRelease
+
+      - name: Show APK output sizes
+        run: |
+          ls -lah app/build/outputs/apk/core/release || true
+          ls -lah app/build/outputs/apk/core/release/* || true
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-core-release
+          if-no-files-found: error
+          path: |
+            app/build/outputs/apk/core/release/*.apk
+            app/build/outputs/apk/core/release/*/*.apk
