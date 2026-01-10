@@ -5,7 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 enum class NoteType(val value: Int) {
     TYPE_TEXT(0),
-    TYPE_CHECKLIST(1);
+    TYPE_CHECKLIST(1),
+    TYPE_COUNTER(2);
 
     companion object {
         fun fromValue(value: Int): NoteType {

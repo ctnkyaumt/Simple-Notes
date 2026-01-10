@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/counter_holder"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:id="@+id/counter_items_holder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <RelativeLayout
+            android:id="@+id/note_locked_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="@dimen/activity_margin"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/note_locked_image"
+                android:layout_width="@dimen/normal_icon_size"
+                android:layout_height="@dimen/normal_icon_size"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="@dimen/activity_margin"
+                android:src="@drawable/ic_lock_vector" />
+
+            <com.simplemobiletools.commons.views.MyTextView
+                android:id="@+id/note_locked_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/note_locked_image"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="@dimen/activity_margin"
+                android:paddingStart="@dimen/bigger_margin"
+                android:paddingTop="@dimen/medium_margin"
+                android:paddingEnd="@dimen/bigger_margin"
+                android:text="@string/note_content_locked" />
+
+            <TextView
+                android:id="@+id/note_locked_show"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/note_locked_label"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="@dimen/medium_margin"
+                android:background="@drawable/ripple_all_corners"
+                android:padding="@dimen/activity_margin"
+                android:text="@string/show_content" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/counter_content_holder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <com.simplemobiletools.commons.views.MyRecyclerView
+                android:id="@+id/counter_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:overScrollMode="never"
+                android:paddingBottom="@dimen/secondary_fab_bottom_margin"
+                android:visibility="gone"
+                app:layoutManager="com.simplemobiletools.commons.views.MyLinearLayoutManager" />
+
+            <com.simplemobiletools.commons.views.MyTextView
+                android:id="@+id/fragment_placeholder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/activity_margin"
+                android:alpha="0.8"
+                android:gravity="center"
+                android:paddingStart="@dimen/activity_margin"
+                android:paddingEnd="@dimen/activity_margin"
+                android:text="@string/counter_is_empty"
+                android:textSize="@dimen/bigger_text_size"
+                android:textStyle="italic"
+                android:visibility="gone" />
+
+            <com.simplemobiletools.commons.views.MyTextView
+                android:id="@+id/fragment_placeholder_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/fragment_placeholder"
+                android:layout_centerHorizontal="true"
+                android:background="@drawable/ripple_all_corners"
+                android:gravity="center"
+                android:padding="@dimen/activity_margin"
+                android:text="@string/add_new_counter_items"
+                android:textSize="@dimen/bigger_text_size"
+                android:visibility="gone" />
+
+        </RelativeLayout>
+    </RelativeLayout>
+
+    <com.simplemobiletools.commons.views.MyFloatingActionButton
+        android:id="@+id/counter_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/activity_margin"
+        android:src="@drawable/ic_plus_vector" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

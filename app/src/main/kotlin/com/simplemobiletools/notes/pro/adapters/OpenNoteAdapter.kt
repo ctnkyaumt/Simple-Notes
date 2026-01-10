@@ -21,6 +21,7 @@ import com.simplemobiletools.commons.views.MyRecyclerView
 import com.simplemobiletools.notes.pro.databinding.OpenNoteItemBinding
 import com.simplemobiletools.notes.pro.extensions.config
 import com.simplemobiletools.notes.pro.models.ChecklistItem
+import com.simplemobiletools.notes.pro.models.CounterItem
 import com.simplemobiletools.notes.pro.models.Note
 import com.simplemobiletools.notes.pro.models.NoteType
 
@@ -134,6 +135,13 @@ class OpenNoteAdapter(
                     currentPos += System.lineSeparator().length
                 }
                 formattedText
+            }
+
+            NoteType.TYPE_COUNTER -> {
+                val counterItemType = object : TypeToken<List<CounterItem>>() {}.type
+                val rawValue = getNoteStoredValue(context)?.ifEmpty { "[]" } ?: "[]"
+                val items = Gson().fromJson<List<CounterItem>>(rawValue, counterItemType) ?: listOf()
+                items.joinToString(separator = System.lineSeparator()) { "${it.title}: ${it.count}" }
             }
         }
     }

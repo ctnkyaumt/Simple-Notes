@@ -36,6 +36,7 @@
     <string name="show_note_title">Show note title</string>
     <string name="new_note_type">New note type:</string>
     <string name="text_note">Text note</string>
+    <string name="counter">Counter</string>
     <string name="lock_note">Lock note</string>
     <string name="unlock_note">Unlock note</string>
     <string name="unlock_notes">Unlock notes</string>
@@ -86,6 +87,11 @@
     <string name="checklist_is_empty">The checklist is empty</string>
     <string name="remove_done_items">Remove done items</string>
     <string name="add_to_the_top">Add to the top</string>
+
+    <string name="delete_counter_item">Delete counter item</string>
+    <string name="delete_counter_item_prompt_message">The counter is at 0. Do you want to delete this entry?</string>
+    <string name="counter_is_empty">The counter list is empty</string>
+    <string name="add_new_counter_items">Add new counter items</string>
 
     <!-- Import / Export -->
     <string name="import_folder">Import folder</string>

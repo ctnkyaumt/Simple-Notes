@@ -21,12 +21,14 @@ import com.simplemobiletools.commons.helpers.ensureBackgroundThread
 import com.simplemobiletools.commons.models.RadioItem
 import com.simplemobiletools.notes.pro.R
 import com.simplemobiletools.notes.pro.adapters.ChecklistAdapter
+import com.simplemobiletools.notes.pro.adapters.CounterAdapter
 import com.simplemobiletools.notes.pro.databinding.WidgetConfigBinding
 import com.simplemobiletools.notes.pro.extensions.config
 import com.simplemobiletools.notes.pro.extensions.getPercentageFontSize
 import com.simplemobiletools.notes.pro.extensions.widgetsDB
 import com.simplemobiletools.notes.pro.helpers.*
 import com.simplemobiletools.notes.pro.models.ChecklistItem
+import com.simplemobiletools.notes.pro.models.CounterItem
 import com.simplemobiletools.notes.pro.models.Note
 import com.simplemobiletools.notes.pro.models.NoteType
 import com.simplemobiletools.notes.pro.models.Widget
@@ -172,6 +174,30 @@ class WidgetConfigureActivity : SimpleActivity() {
             }
 
             ChecklistAdapter(this, items, null, binding.checklistNoteView, false) {}.apply {
+                updateTextColor(mTextColor)
+                binding.checklistNoteView.adapter = this
+            }
+            binding.textNoteView.beGone()
+            binding.checklistNoteView.beVisible()
+        } else if (note.type == NoteType.TYPE_COUNTER) {
+            val counterItemType = object : TypeToken<List<CounterItem>>() {}.type
+            val items = Gson().fromJson<ArrayList<CounterItem>>(note.value, counterItemType) ?: ArrayList(1)
+            items.apply {
+                if (isEmpty()) {
+                    add(CounterItem(0, System.currentTimeMillis(), "Coffee", 3))
+                    add(CounterItem(1, System.currentTimeMillis(), "Workout", 1))
+                    add(CounterItem(2, System.currentTimeMillis(), "Water", 0))
+                }
+            }
+
+            CounterAdapter(
+                activity = this,
+                items = items,
+                recyclerView = binding.checklistNoteView,
+                itemClick = {},
+                plusClick = { _, _ -> },
+                minusClick = { _, _ -> }
+            ).apply {
                 updateTextColor(mTextColor)
                 binding.checklistNoteView.adapter = this
             }

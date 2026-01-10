@@ -18,6 +18,7 @@ import com.simplemobiletools.notes.pro.extensions.getPercentageFontSize
 import com.simplemobiletools.notes.pro.extensions.notesDB
 import com.simplemobiletools.notes.pro.helpers.*
 import com.simplemobiletools.notes.pro.models.ChecklistItem
+import com.simplemobiletools.notes.pro.models.CounterItem
 import com.simplemobiletools.notes.pro.models.Note
 import com.simplemobiletools.notes.pro.models.NoteType
 import kotlinx.serialization.decodeFromString
@@ -35,6 +36,7 @@ class WidgetAdapter(val context: Context, val intent: Intent) : RemoteViewsServi
     private var widgetTextColor = DEFAULT_WIDGET_TEXT_COLOR
     private var note: Note? = null
     private var checklistItems = mutableListOf<ChecklistItem>()
+    private var counterItems = mutableListOf<CounterItem>()
 
     override fun getViewAt(position: Int): RemoteViews {
         val noteId = intent.getLongExtra(NOTE_ID, 0L)
@@ -68,7 +70,11 @@ class WidgetAdapter(val context: Context, val intent: Intent) : RemoteViewsServi
             }
         } else {
             remoteView = RemoteViews(context.packageName, R.layout.widget_text_layout).apply {
-                val noteText = note!!.getNoteStoredValue(context) ?: ""
+                val noteText = if (note!!.type == NoteType.TYPE_COUNTER) {
+                    counterItems.joinToString(separator = System.lineSeparator()) { "${it.title}: ${it.count}" }
+                } else {
+                    note!!.getNoteStoredValue(context) ?: ""
+                }
                 for (id in textIds) {
                     setText(id, noteText)
                     setTextColor(id, widgetTextColor)
@@ -137,6 +143,8 @@ class WidgetAdapter(val context: Context, val intent: Intent) : RemoteViewsServi
                     checklistItems.sortBy { it.isDone }
                 }
             }
+        } else if (note?.type == NoteType.TYPE_COUNTER) {
+            counterItems = note!!.getNoteStoredValue(context)?.ifEmpty { "[]" }?.let { Json.decodeFromString(it) } ?: mutableListOf()
         }
     }
 

@@ -201,6 +201,7 @@ class MainActivity : SimpleActivity() {
     private fun refreshMenuItems() {
         val multipleNotesExist = mNotes.size > 1
         val isCurrentItemChecklist = isCurrentItemChecklist()
+        val isCurrentItemCounter = isCurrentItemCounter()
 
         binding.mainToolbar.menu.apply {
             findItem(R.id.undo).apply {
@@ -216,7 +217,7 @@ class MainActivity : SimpleActivity() {
             findItem(R.id.rename_note).isVisible = multipleNotesExist
             findItem(R.id.open_note).isVisible = multipleNotesExist
             findItem(R.id.delete_note).isVisible = multipleNotesExist
-            findItem(R.id.open_search).isVisible = !isCurrentItemChecklist
+            findItem(R.id.open_search).isVisible = !isCurrentItemChecklist && !isCurrentItemCounter
             findItem(R.id.remove_done_items).isVisible = isCurrentItemChecklist
             findItem(R.id.sort_checklist).isVisible = isCurrentItemChecklist
             findItem(R.id.import_folder).isVisible = !isQPlus()
@@ -348,6 +349,8 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun isCurrentItemChecklist() = if (::mCurrentNote.isInitialized) mCurrentNote.type == NoteType.TYPE_CHECKLIST else false
+
+    private fun isCurrentItemCounter() = if (::mCurrentNote.isInitialized) mCurrentNote.type == NoteType.TYPE_COUNTER else false
 
     @SuppressLint("NewApi")
     private fun checkShortcuts() {
@@ -522,7 +525,7 @@ class MainActivity : SimpleActivity() {
                 }
             }
 
-            if (!config.showKeyboard || mCurrentNote.type == NoteType.TYPE_CHECKLIST) {
+            if (!config.showKeyboard || mCurrentNote.type == NoteType.TYPE_CHECKLIST || mCurrentNote.type == NoteType.TYPE_COUNTER) {
                 hideKeyboard()
             }
             refreshMenuItems()
@@ -1062,7 +1065,7 @@ class MainActivity : SimpleActivity() {
 
     private fun exportAsFile() {
         ExportFileDialog(this, mCurrentNote) {
-            val textToExport = if (mCurrentNote.type == NoteType.TYPE_TEXT) getCurrentNoteText() else mCurrentNote.value
+            val textToExport = if (mCurrentNote.type == NoteType.TYPE_TEXT) getCurrentNoteText() else getCurrentNoteValue()
             if (textToExport == null || textToExport.isEmpty()) {
                 toast(com.simplemobiletools.commons.R.string.unknown_error_occurred)
             } else if (mCurrentNote.type == NoteType.TYPE_TEXT) {
@@ -1216,22 +1219,31 @@ class MainActivity : SimpleActivity() {
     private fun getCurrentNoteText() = getPagerAdapter().getCurrentNoteViewText(binding.viewPager.currentItem)
 
     private fun getCurrentNoteValue(): String {
-        return if (mCurrentNote.type == NoteType.TYPE_TEXT) {
-            getCurrentNoteText() ?: ""
-        } else {
-            getPagerAdapter().getNoteChecklistItems(binding.viewPager.currentItem) ?: ""
+        return when (mCurrentNote.type) {
+            NoteType.TYPE_TEXT -> getCurrentNoteText() ?: ""
+            NoteType.TYPE_CHECKLIST -> getPagerAdapter().getNoteChecklistItems(binding.viewPager.currentItem) ?: ""
+            NoteType.TYPE_COUNTER -> getPagerAdapter().getNoteCounterItems(binding.viewPager.currentItem) ?: ""
         }
     }
 
     private fun getPrintableText(): String {
-        return if (mCurrentNote.type == NoteType.TYPE_TEXT) {
-            getCurrentNoteText() ?: ""
-        } else {
-            var printableText = ""
-            getPagerAdapter().getNoteChecklistRawItems(binding.viewPager.currentItem)?.forEach {
-                printableText += "${it.title}\n\n"
+        return when (mCurrentNote.type) {
+            NoteType.TYPE_TEXT -> getCurrentNoteText() ?: ""
+            NoteType.TYPE_CHECKLIST -> {
+                var printableText = ""
+                getPagerAdapter().getNoteChecklistRawItems(binding.viewPager.currentItem)?.forEach {
+                    printableText += "${it.title}\n\n"
+                }
+                printableText
             }
-            printableText
+
+            NoteType.TYPE_COUNTER -> {
+                var printableText = ""
+                getPagerAdapter().getNoteCounterRawItems(binding.viewPager.currentItem)?.forEach {
+                    printableText += "${it.title}: ${it.count}\n\n"
+                }
+                printableText
+            }
         }
     }
 
@@ -1241,6 +1253,8 @@ class MainActivity : SimpleActivity() {
         getPagerAdapter().saveCurrentNote(binding.viewPager.currentItem, force)
         if (mCurrentNote.type == NoteType.TYPE_CHECKLIST) {
             mCurrentNote.value = getPagerAdapter().getNoteChecklistItems(binding.viewPager.currentItem) ?: ""
+        } else if (mCurrentNote.type == NoteType.TYPE_COUNTER) {
+            mCurrentNote.value = getPagerAdapter().getNoteCounterItems(binding.viewPager.currentItem) ?: ""
         }
     }
 
@@ -1337,7 +1351,10 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun shareText() {
-        val text = if (mCurrentNote.type == NoteType.TYPE_TEXT) getCurrentNoteText() else mCurrentNote.value
+        val text = when (mCurrentNote.type) {
+            NoteType.TYPE_TEXT -> getCurrentNoteText()
+            else -> getPrintableText()
+        }
         if (text.isNullOrEmpty()) {
             toast(R.string.cannot_share_empty_text)
             return

@@ -7,6 +7,7 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentStatePagerAdapter
 import com.simplemobiletools.commons.extensions.showErrorToast
 import com.simplemobiletools.notes.pro.fragments.ChecklistFragment
+import com.simplemobiletools.notes.pro.fragments.CounterFragment
 import com.simplemobiletools.notes.pro.fragments.NoteFragment
 import com.simplemobiletools.notes.pro.fragments.TextFragment
 import com.simplemobiletools.notes.pro.helpers.NOTE_ID
@@ -30,7 +31,11 @@ class NotesPagerAdapter(fm: FragmentManager, val notes: List<Note>, val activity
             return fragments[position]!!
         }
 
-        val fragment = if (note.type == NoteType.TYPE_TEXT) TextFragment() else ChecklistFragment()
+        val fragment = when (note.type) {
+            NoteType.TYPE_TEXT -> TextFragment()
+            NoteType.TYPE_CHECKLIST -> ChecklistFragment()
+            NoteType.TYPE_COUNTER -> CounterFragment()
+        }
         fragment.arguments = bundle
         fragments[position] = fragment
         return fragment
@@ -66,6 +71,10 @@ class NotesPagerAdapter(fm: FragmentManager, val notes: List<Note>, val activity
     fun getNoteChecklistRawItems(position: Int) = (fragments[position] as? ChecklistFragment)?.items
 
     fun getNoteChecklistItems(position: Int) = (fragments[position] as? ChecklistFragment)?.getChecklistItems()
+
+    fun getNoteCounterRawItems(position: Int) = (fragments[position] as? CounterFragment)?.items
+
+    fun getNoteCounterItems(position: Int) = (fragments[position] as? CounterFragment)?.getCounterItems()
 
     fun undo(position: Int) = (fragments[position] as? TextFragment)?.undo()
 

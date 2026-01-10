@@ -56,5 +56,13 @@
             android:paddingBottom="@dimen/normal_margin"
             android:text="@string/checklist" />
 
+        <com.simplemobiletools.commons.views.MyCompatRadioButton
+            android:id="@+id/type_counter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="@dimen/normal_margin"
+            android:paddingBottom="@dimen/normal_margin"
+            android:text="@string/counter" />
+
     </RadioGroup>
 </LinearLayout>

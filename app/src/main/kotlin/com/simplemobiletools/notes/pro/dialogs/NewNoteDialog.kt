@@ -26,6 +26,7 @@ class NewNoteDialog(
             val defaultType = when {
                 setChecklistAsDefault -> typeChecklist.id
                 activity.config.lastCreatedNoteType == NoteType.TYPE_TEXT.value -> typeTextNote.id
+                activity.config.lastCreatedNoteType == NoteType.TYPE_COUNTER.value -> typeCounter.id
                 else -> typeChecklist.id
             }
 
@@ -54,10 +55,10 @@ class NewNoteDialog(
                                 newTitle.isEmpty() -> activity.toast(R.string.no_title)
                                 activity.notesDB.getNoteIdWithTitleInNotebook(newTitle, targetNotebookId) != null -> activity.toast(R.string.title_taken)
                                 else -> {
-                                    val type = if (binding.newNoteType.checkedRadioButtonId == binding.typeChecklist.id) {
-                                        NoteType.TYPE_CHECKLIST
-                                    } else {
-                                        NoteType.TYPE_TEXT
+                                    val type = when (binding.newNoteType.checkedRadioButtonId) {
+                                        binding.typeChecklist.id -> NoteType.TYPE_CHECKLIST
+                                        binding.typeCounter.id -> NoteType.TYPE_COUNTER
+                                        else -> NoteType.TYPE_TEXT
                                     }
 
                                     activity.config.lastCreatedNoteType = type.value
