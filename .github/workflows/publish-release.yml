@@ -1,0 +1,150 @@
+name: Publish GitHub Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "New versionName (e.g. 6.17.1)"
+        required: true
+        type: string
+      first_release_from_commit:
+        description: "For the very first release (no previous tags), generate notes starting from this commit SHA"
+        required: false
+        default: "3edf4056ee0b85eb3cdeb0954bf486c7c95a10a9"
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Decode keystore (optional)
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > app/app-release.keystore
+
+            cat > keystore.properties <<EOF
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          storeFile=app-release.keystore
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          EOF
+
+            echo "Keystore configured. Release APKs will be signed."
+          else
+            echo "No keystore secrets provided. Release APKs will be unsigned (still fine for downloading/comparison)."
+          fi
+
+      - name: Bump versionName + versionCode
+        env:
+          VERSION_NAME: ${{ inputs.version_name }}
+        run: |
+          set -euo pipefail
+
+          FILE="gradle/libs.versions.toml"
+
+          CURRENT_CODE=$(grep -E '^app-version-versionCode\s*=\s*"[0-9]+"' "$FILE" | sed -E 's/.*"([0-9]+)"/\1/')
+          if [ -z "$CURRENT_CODE" ]; then
+            echo "Could not read current versionCode from $FILE" >&2
+            exit 1
+          fi
+
+          NEW_CODE=$((CURRENT_CODE + 1))
+
+          sed -i -E "s/^app-version-versionName\s*=\s*\".*\"/app-version-versionName = \"$VERSION_NAME\"/" "$FILE"
+          sed -i -E "s/^app-version-versionCode\s*=\s*\"[0-9]+\"/app-version-versionCode = \"$NEW_CODE\"/" "$FILE"
+
+          echo "Bumped versionName to $VERSION_NAME"
+          echo "Bumped versionCode to $NEW_CODE"
+
+      - name: Commit and tag
+        env:
+          VERSION_NAME: ${{ inputs.version_name }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add gradle/libs.versions.toml
+          git commit -m "Release v$VERSION_NAME" || echo "No changes to commit"
+
+          TAG="v$VERSION_NAME"
+          git tag -f "$TAG"
+
+          git push
+          git push --force origin "$TAG"
+
+      - name: Build Core Release APK (armv7 + arm64)
+        run: ./gradlew :app:assembleCoreRelease
+
+      - name: Generate release notes
+        env:
+          FIRST_FROM: ${{ inputs.first_release_from_commit }}
+        run: |
+          set -euo pipefail
+
+          TAGS=$(git tag --list 'v*' --sort=-creatordate)
+          LATEST_TAG=$(echo "$TAGS" | head -n 1)
+          PREV_TAG=$(echo "$TAGS" | sed -n '2p')
+
+          if [ -n "$PREV_TAG" ]; then
+            RANGE="$PREV_TAG..HEAD"
+            TITLE="Changes since $PREV_TAG"
+          else
+            RANGE="$FIRST_FROM..HEAD"
+            TITLE="Changes since $FIRST_FROM"
+          fi
+
+          echo "$TITLE" > release-notes.md
+          echo "" >> release-notes.md
+
+          git log "$RANGE" --no-merges --pretty=format:'- %s (%h)' >> release-notes.md
+
+          echo "" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "Build: coreRelease" >> release-notes.md
+
+      - name: Create GitHub Release and upload APKs
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version_name }}
+          name: v${{ inputs.version_name }}
+          body_path: release-notes.md
+          files: |
+            app/build/outputs/apk/core/release/*.apk
+            app/build/outputs/apk/core/release/*/*.apk
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-core-release
+          if-no-files-found: error
+          path: |
+            app/build/outputs/apk/core/release/*.apk
+            app/build/outputs/apk/core/release/*/*.apk
