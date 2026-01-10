@@ -22,6 +22,7 @@
     <string name="delete_notebook">Delete notebook</string>
     <string name="delete_notebook_prompt_message">Are you sure you want to delete notebook "%s"?</string>
     <string name="cannot_delete_default_notebook">The default notebook cannot be deleted.</string>
+    <string name="cannot_create_notes_in_general_notebook">You cannot create new notes in the General note notebook.</string>
     <string name="notebook_password_only">Notebooks can be locked only with a password.</string>
     <string name="password">Password</string>
     <string name="confirm_password">Confirm password</string>

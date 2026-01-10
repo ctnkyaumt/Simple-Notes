@@ -80,6 +80,8 @@ class MainActivity : SimpleActivity() {
     private var pendingFirstNotePrompt = false
     private var shouldDeletePlaceholderAfterFirstRealNote = false
 
+    private fun isGeneralNotebook() = currentNotebookId == 1L
+
     private lateinit var searchQueryET: MyEditText
     private lateinit var searchPrevBtn: ImageView
     private lateinit var searchNextBtn: ImageView
@@ -222,12 +224,14 @@ class MainActivity : SimpleActivity() {
             findItem(R.id.unlock_note).isVisible = mNotes.isNotEmpty() && (::mCurrentNote.isInitialized && mCurrentNote.isLocked())
             findItem(R.id.more_apps_from_us).isVisible = !resources.getBoolean(com.simplemobiletools.commons.R.bool.hide_google_relations)
 
+            findItem(R.id.new_note).isVisible = !isGeneralNotebook()
+
             saveNoteButton = findItem(R.id.save_note)
             saveNoteButton!!.isVisible =
                 !config.autosaveNotes && showSaveButton && (::mCurrentNote.isInitialized && mCurrentNote.type == NoteType.TYPE_TEXT)
         }
 
-        binding.pagerTabStrip.beVisibleIf(multipleNotesExist)
+        binding.pagerTabStrip.beVisibleIf(mNotes.isNotEmpty())
     }
 
     private fun setupOptionsMenu() {
@@ -459,6 +463,13 @@ class MainActivity : SimpleActivity() {
     private fun handleTextIntent(text: String) {
         NotesHelper(this).getNotesInNotebook(currentNotebookId) {
             val notes = it
+
+            if (isGeneralNotebook()) {
+                updateSelectedNote(notes.first().id!!)
+                addTextToCurrentNote(if (getCurrentNoteValue().isEmpty()) text else "\n$text")
+                return@getNotesInNotebook
+            }
+
             val list = arrayListOf<RadioItem>().apply {
                 add(RadioItem(0, getString(R.string.create_new_note)))
                 notes.forEachIndexed { index, note ->
@@ -702,6 +713,11 @@ class MainActivity : SimpleActivity() {
         setChecklistAsDefault: Boolean = false,
         cancelCallback: (() -> Unit)? = null
     ) {
+        if (isGeneralNotebook()) {
+            toast(R.string.cannot_create_notes_in_general_notebook)
+            return
+        }
+
         NewNoteDialog(
             activity = this,
             title = title,

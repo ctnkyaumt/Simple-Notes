@@ -18,6 +18,7 @@ import com.simplemobiletools.notes.pro.dialogs.SetNotebookPasswordDialog
 import com.simplemobiletools.notes.pro.dialogs.UnlockNotebookPasswordDialog
 import com.simplemobiletools.notes.pro.extensions.config
 import com.simplemobiletools.notes.pro.extensions.notesDB
+import com.simplemobiletools.notes.pro.extensions.notebooksDB
 import com.simplemobiletools.notes.pro.helpers.OPEN_NEW_NOTE_DIALOG
 import com.simplemobiletools.notes.pro.helpers.NOTEBOOK_ID
 import com.simplemobiletools.notes.pro.helpers.NotebooksHelper
@@ -71,8 +72,44 @@ class NotebooksActivity : SimpleActivity() {
     override fun onResume() {
         super.onResume()
         setupToolbar(binding.notebooksToolbar)
-        refreshNotebooks()
+        ensureDefaultNotebookExists {
+            refreshNotebooks()
+        }
         updateTextColors(binding.notebooksCoordinator)
+    }
+
+    private fun ensureDefaultNotebookExists(callback: () -> Unit) {
+        val generalNoteTitle = getString(R.string.general_note)
+        ensureBackgroundThread {
+            val existingNotebook = notebooksDB.getNotebookWithId(1L)
+            when {
+                existingNotebook == null -> {
+                    notebooksDB.insertOrUpdate(Notebook(id = 1L, title = generalNoteTitle, protectionType = PROTECTION_NONE, protectionHash = ""))
+                }
+
+                existingNotebook.title != generalNoteTitle -> {
+                    existingNotebook.title = generalNoteTitle
+                    notebooksDB.insertOrUpdate(existingNotebook)
+                }
+            }
+
+            val existingNotes = notesDB.getNotesInNotebook(1L)
+            if (existingNotes.isEmpty()) {
+                val note = Note(
+                    id = null,
+                    notebookId = 1L,
+                    title = generalNoteTitle,
+                    value = "",
+                    type = NoteType.TYPE_TEXT,
+                    path = "",
+                    protectionType = PROTECTION_NONE,
+                    protectionHash = ""
+                )
+                notesDB.insertOrUpdate(note)
+            }
+
+            runOnUiThread(callback)
+        }
     }
 
     private fun refreshNotebooks() {
