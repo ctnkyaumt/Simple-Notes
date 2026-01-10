@@ -772,7 +772,7 @@ class MainActivity : SimpleActivity() {
     private fun launchAbout() {
         val message = "${getString(R.string.app_name)}\n${BuildConfig.VERSION_NAME}"
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(R.string.about)
+            .setTitle(com.simplemobiletools.commons.R.string.about)
             .setMessage(message)
             .setPositiveButton(com.simplemobiletools.commons.R.string.ok, null)
             .show()
