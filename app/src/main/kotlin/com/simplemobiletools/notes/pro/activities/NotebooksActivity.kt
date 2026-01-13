@@ -2,8 +2,10 @@ package com.simplemobiletools.notes.pro.activities
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.simplemobiletools.commons.extensions.*
 import com.simplemobiletools.commons.helpers.ensureBackgroundThread
 import com.simplemobiletools.commons.helpers.LICENSE_RTL
@@ -30,6 +32,7 @@ import com.simplemobiletools.notes.pro.models.NoteType
 class NotebooksActivity : SimpleActivity() {
     private val binding by viewBinding(ActivityNotebooksBinding::inflate)
     private var adapter: NotebooksAdapter? = null
+    private var itemTouchHelper: ItemTouchHelper? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         isMaterialActivity = true
@@ -54,8 +57,38 @@ class NotebooksActivity : SimpleActivity() {
 
         binding.notebooksList.layoutManager = GridLayoutManager(this, config.notebookColumns)
 
-        adapter = NotebooksAdapter(emptyList(), itemClick = { openNotebook(it) }, itemLongClick = { showNotebookActions(it) })
+        adapter = NotebooksAdapter(
+            mutableListOf(),
+            itemClick = { openNotebook(it) },
+            itemLongClick = { showNotebookActions(it) },
+            dragStart = { viewHolder -> itemTouchHelper?.startDrag(viewHolder) },
+            itemsReordered = { persistNotebookOrder(it) }
+        )
         binding.notebooksList.adapter = adapter
+
+        itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT,
+            0
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val fromPosition = viewHolder.bindingAdapterPosition
+                val toPosition = target.bindingAdapterPosition
+                return adapter?.onItemMove(fromPosition, toPosition) == true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+            }
+
+            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                super.clearView(recyclerView, viewHolder)
+                adapter?.onDragFinished()
+            }
+        })
+        itemTouchHelper?.attachToRecyclerView(binding.notebooksList)
 
         binding.newNotebookFab.setOnClickListener {
             NewNotebookDialog(this) { notebook ->
@@ -152,6 +185,7 @@ class NotebooksActivity : SimpleActivity() {
     private fun showNotebookActions(notebook: Notebook) {
         val options = mutableListOf<String>().apply {
             add(getString(R.string.rename_notebook))
+            add(if (notebook.isPinned()) getString(R.string.unpin_notebook) else getString(R.string.pin_notebook))
             add(if (notebook.isLocked()) getString(R.string.unlock_notebook) else getString(R.string.lock_notebook))
             if (notebook.id != 1L) {
                 add(getString(R.string.delete_notebook))
@@ -166,12 +200,53 @@ class NotebooksActivity : SimpleActivity() {
                             refreshNotebooks()
                         }
                     }
+                    getString(R.string.pin_notebook),
+                    getString(R.string.unpin_notebook) -> togglePinned(notebook)
                     getString(R.string.lock_notebook) -> lockNotebook(notebook)
                     getString(R.string.unlock_notebook) -> unlockNotebook(notebook)
                     getString(R.string.delete_notebook) -> deleteNotebook(notebook)
                 }
             }
             .show()
+    }
+
+    private fun togglePinned(notebook: Notebook) {
+        val notebookId = notebook.id ?: return
+        ensureBackgroundThread {
+            val newPinned = if (notebook.isPinned()) 0 else 1
+            val maxSortOrder = notebooksDB.getMaxSortOrder(newPinned) ?: 0
+            val newSortOrder = maxSortOrder + 1
+            notebooksDB.updatePinned(notebookId, newPinned)
+            notebooksDB.updateSortOrder(notebookId, newSortOrder)
+            runOnUiThread {
+                refreshNotebooks()
+            }
+        }
+    }
+
+    private fun persistNotebookOrder(notebooks: List<Notebook>) {
+        ensureBackgroundThread {
+            val pinnedNotebooks = notebooks.filter { it.isPinned() }
+            val unpinnedNotebooks = notebooks.filterNot { it.isPinned() }
+
+            pinnedNotebooks.forEachIndexed { index, item ->
+                val id = item.id ?: return@forEachIndexed
+                val newOrder = index + 1
+                if (item.sortOrder != newOrder) {
+                    item.sortOrder = newOrder
+                    notebooksDB.updateSortOrder(id, newOrder)
+                }
+            }
+
+            unpinnedNotebooks.forEachIndexed { index, item ->
+                val id = item.id ?: return@forEachIndexed
+                val newOrder = index + 1
+                if (item.sortOrder != newOrder) {
+                    item.sortOrder = newOrder
+                    notebooksDB.updateSortOrder(id, newOrder)
+                }
+            }
+        }
     }
 
     private fun deleteNotebook(notebook: Notebook) {

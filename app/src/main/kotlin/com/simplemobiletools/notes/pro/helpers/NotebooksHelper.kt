@@ -28,6 +28,10 @@ class NotebooksHelper(private val context: Context) {
 
     fun insertOrUpdateNotebook(notebook: Notebook, callback: ((newNotebookId: Long) -> Unit)? = null) {
         ensureBackgroundThread {
+            if (notebook.id == null) {
+                val maxSortOrder = context.notebooksDB.getMaxSortOrder(notebook.pinned) ?: 0
+                notebook.sortOrder = maxSortOrder + 1
+            }
             val notebookId = context.notebooksDB.insertOrUpdate(notebook)
             Handler(Looper.getMainLooper()).post {
                 callback?.invoke(notebookId)

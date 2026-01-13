@@ -18,7 +18,7 @@ import com.simplemobiletools.notes.pro.models.NoteType
 import com.simplemobiletools.notes.pro.models.Widget
 import java.util.concurrent.Executors
 
-@Database(entities = [Note::class, Notebook::class, Widget::class], version = 5)
+@Database(entities = [Note::class, Notebook::class, Widget::class], version = 6)
 abstract class NotesDatabase : RoomDatabase() {
 
     abstract fun NotebooksDao(): NotebooksDao
@@ -47,6 +47,7 @@ abstract class NotesDatabase : RoomDatabase() {
                             .addMigrations(MIGRATION_2_3)
                             .addMigrations(MIGRATION_3_4)
                             .addMigrations(MIGRATION_4_5)
+                            .addMigrations(MIGRATION_5_6)
                             .build()
                         db!!.openHelper.setWriteAheadLoggingEnabled(true)
                     }
@@ -62,7 +63,7 @@ abstract class NotesDatabase : RoomDatabase() {
         private fun insertFirstNote(context: Context) {
             Executors.newSingleThreadScheduledExecutor().execute {
                 db!!.openHelper.writableDatabase.execSQL(
-                    "INSERT OR IGNORE INTO notebooks(id, title, protection_type, protection_hash) VALUES(1, ?, $PROTECTION_NONE, '')",
+                    "INSERT OR IGNORE INTO notebooks(id, title, protection_type, protection_hash, pinned, sort_order) VALUES(1, ?, $PROTECTION_NONE, '', 0, 0)",
                     arrayOf(context.getString(R.string.general_note))
                 )
 
@@ -111,6 +112,33 @@ abstract class NotesDatabase : RoomDatabase() {
                 database.execSQL("ALTER TABLE notes ADD COLUMN notebook_id INTEGER NOT NULL DEFAULT 1")
                 database.execSQL("UPDATE notes SET notebook_id = 1 WHERE notebook_id IS NULL")
             }
+        }
+
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                if (!tableHasColumn(database, tableName = "notebooks", columnName = "pinned")) {
+                    database.execSQL("ALTER TABLE notebooks ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0")
+                }
+
+                if (!tableHasColumn(database, tableName = "notebooks", columnName = "sort_order")) {
+                    database.execSQL("ALTER TABLE notebooks ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0")
+                }
+
+                database.execSQL("UPDATE notebooks SET sort_order = id WHERE sort_order = 0")
+            }
+        }
+
+        private fun tableHasColumn(database: SupportSQLiteDatabase, tableName: String, columnName: String): Boolean {
+            val cursor = database.query("PRAGMA table_info($tableName)")
+            cursor.use {
+                val nameColumnIndex = cursor.getColumnIndex("name")
+                while (cursor.moveToNext()) {
+                    if (cursor.getString(nameColumnIndex) == columnName) {
+                        return true
+                    }
+                }
+            }
+            return false
         }
     }
 }

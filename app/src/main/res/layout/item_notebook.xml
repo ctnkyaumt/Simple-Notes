@@ -18,6 +18,16 @@
         android:src="@drawable/ic_lock_open_vector"
         android:visibility="gone" />
 
+    <ImageView
+        android:id="@+id/notebook_pinned_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_alignParentEnd="true"
+        android:layout_below="@+id/notebook_lock_icon"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_pin_vector"
+        android:visibility="gone" />
+
     <com.simplemobiletools.commons.views.MyTextView
         android:id="@+id/notebook_title"
         android:layout_width="match_parent"
@@ -29,5 +39,14 @@
         android:textSize="@dimen/big_text_size"
         android:textStyle="bold"
         tools:text="Notebook" />
+
+    <ImageView
+        android:id="@+id/notebook_drag_handle"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_drag_handle_vector" />
 
 </com.simplemobiletools.notes.pro.views.SquareRelativeLayout>

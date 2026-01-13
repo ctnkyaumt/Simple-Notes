@@ -18,6 +18,8 @@
     <string name="notebooks">Notebooks</string>
     <string name="new_notebook">New notebook</string>
     <string name="rename_notebook">Rename notebook</string>
+    <string name="pin_notebook">Pin notebook</string>
+    <string name="unpin_notebook">Unpin notebook</string>
     <string name="lock_notebook">Lock notebook</string>
     <string name="unlock_notebook">Unlock notebook</string>
     <string name="delete_notebook">Delete notebook</string>
