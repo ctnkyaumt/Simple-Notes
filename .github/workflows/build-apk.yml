@@ -1,4 +1,4 @@
-name: Build APK (ARM)
+name: Build Debug APK (ARM)
 
 on:
   workflow_dispatch:
