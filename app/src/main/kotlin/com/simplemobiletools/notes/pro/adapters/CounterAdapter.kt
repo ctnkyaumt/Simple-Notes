@@ -69,8 +69,8 @@ class CounterAdapter(
                 setTextSize(TypedValue.COMPLEX_UNIT_PX, context.getPercentageFontSize())
             }
 
-            counterPlus.applyColorFilter(textColor)
-            counterMinus.applyColorFilter(textColor)
+            counterPlus.applyColorFilter(resources.getColor(com.simplemobiletools.commons.R.color.md_green_700))
+            counterMinus.applyColorFilter(resources.getColor(com.simplemobiletools.commons.R.color.md_red_700))
 
             counterPlus.setOnClickListener { plusClick(counterItem, position) }
             counterMinus.setOnClickListener { minusClick(counterItem, position) }
