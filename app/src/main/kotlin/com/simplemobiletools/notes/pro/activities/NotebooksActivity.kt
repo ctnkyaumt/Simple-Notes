@@ -21,6 +21,8 @@ import com.simplemobiletools.notes.pro.dialogs.UnlockNotebookPasswordDialog
 import com.simplemobiletools.notes.pro.extensions.config
 import com.simplemobiletools.notes.pro.extensions.notesDB
 import com.simplemobiletools.notes.pro.extensions.notebooksDB
+import com.simplemobiletools.notes.pro.extensions.updateWidgets
+import com.simplemobiletools.notes.pro.extensions.widgetsDB
 import com.simplemobiletools.notes.pro.helpers.OPEN_NEW_NOTE_DIALOG
 import com.simplemobiletools.notes.pro.helpers.NOTEBOOK_ID
 import com.simplemobiletools.notes.pro.helpers.NotebooksHelper
@@ -266,7 +268,18 @@ class NotebooksActivity : SimpleActivity() {
         ) {
             val notebookId = notebook.id ?: return@ConfirmationDialog
             ensureBackgroundThread {
-                notesDB.moveNotesToNotebook(sourceNotebookId = notebookId, targetNotebookId = 1L)
+                val notesToDelete = notesDB.getNotesInNotebook(notebookId)
+                val noteIdsToDelete = notesToDelete.mapNotNull { it.id }.toSet()
+                notesToDelete.forEach { note ->
+                    note.id?.let { widgetsDB.deleteNoteWidgets(it) }
+                    notesDB.deleteNote(note)
+                }
+
+                if (noteIdsToDelete.contains(config.widgetNoteId)) {
+                    config.widgetNoteId = 1L
+                    updateWidgets()
+                }
+
                 NotebooksHelper(this).deleteNotebook(notebook) {
                     if (config.currentNotebookId == notebookId) {
                         config.currentNotebookId = 1L
