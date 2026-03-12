@@ -10,8 +10,12 @@ import com.simplemobiletools.commons.helpers.ensureBackgroundThread
 import com.simplemobiletools.notes.pro.R
 import com.simplemobiletools.notes.pro.extensions.config
 import com.simplemobiletools.notes.pro.extensions.notesDB
+import com.simplemobiletools.notes.pro.extensions.notebooksDB
 import com.simplemobiletools.notes.pro.models.Note
+import com.simplemobiletools.notes.pro.models.Notebook
 import com.simplemobiletools.notes.pro.models.NoteType
+import com.simplemobiletools.notes.pro.models.BackupData
+import com.simplemobiletools.notes.pro.models.BackupSettings
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -129,61 +133,120 @@ class NotesHelper(val context: Context) {
         }
     }
 
-    fun importNotes(activity: BaseSimpleActivity, notes: List<Note>, callback: (ImportResult) -> Unit) {
+    fun importNotes(activity: BaseSimpleActivity, notes: List<Note>, notebooks: List<Notebook> = emptyList(), callback: (ImportResult) -> Unit) {
         ensureBackgroundThread {
-            notes.forEach {
-                // we need to reset the ID to avoid overwriting existing notes with the same ID
-                it.id = null
-                // we need to set the notebook ID to the default one, as the imported notebook ID might not exist
-                it.notebookId = 1L
-            }
-
-            val currentNotes = activity.notesDB.getNotes()
-            if (currentNotes.isEmpty()) {
-                insertOrUpdateNotes(notes) { savedNotes ->
-
-                    val newCurrentNotes = activity.notesDB.getNotes()
-
-                    val result = when {
-                        currentNotes.size == newCurrentNotes.size -> ImportResult.IMPORT_NOTHING_NEW
-                        notes.size == savedNotes.size -> ImportResult.IMPORT_OK
-                        savedNotes.isEmpty() -> ImportResult.IMPORT_FAIL
-                        else -> ImportResult.IMPORT_PARTIAL
-                    }
-                    callback(result)
-                }
-            } else {
-                var imported = 0
-                var skipped = 0
-
-                notes.forEach { note ->
-                    val exists = context.notesDB.getNoteIdWithTitle(note.title) != null
-                    if (!exists) {
-                        context.notesDB.insertOrUpdate(note)
-                        imported++
+            // Update or create notebooks from backup to restore pinned status and sort order
+            if (notebooks.isNotEmpty()) {
+                val existingNotebooks = activity.notebooksDB.getNotebooks().associateBy { it.title }
+                notebooks.forEach { importedNotebook ->
+                    if (existingNotebooks.containsKey(importedNotebook.title)) {
+                        val existing = existingNotebooks[importedNotebook.title]!!
+                        // Update properties if they differ
+                        if (existing.pinned != importedNotebook.pinned || existing.sortOrder != importedNotebook.sortOrder) {
+                            existing.pinned = importedNotebook.pinned
+                            existing.sortOrder = importedNotebook.sortOrder
+                            activity.notebooksDB.insertOrUpdate(existing)
+                        }
                     } else {
-                        skipped++
+                        // Create new notebook with imported properties
+                        val newNotebook = importedNotebook.copy(id = null)
+                        activity.notebooksDB.insertOrUpdate(newNotebook)
+                    }
+                }
+            }
+
+            val currentNotebooks = activity.notebooksDB.getNotebooks().associateBy { it.title }
+            val notebooksMap = currentNotebooks.toMutableMap()
+
+            var imported = 0
+            var skipped = 0
+
+            notes.forEach { note ->
+                // we need to reset the ID to avoid overwriting existing notes with the same ID
+                note.id = null
+
+                // Determine target notebook
+                var targetNotebookId = 1L
+                val notebookTitle = note.notebookTitle
+                if (notebookTitle != null) {
+                    if (notebooksMap.containsKey(notebookTitle)) {
+                        targetNotebookId = notebooksMap[notebookTitle]!!.id!!
+                    } else {
+                        val newNotebook = Notebook(null, notebookTitle, PROTECTION_NONE, "")
+                        targetNotebookId = activity.notebooksDB.insertOrUpdate(newNotebook)
+                        notebooksMap[notebookTitle] = newNotebook.copy(id = targetNotebookId)
                     }
                 }
 
-                val result = when {
-                    skipped == notes.size || imported == 0 -> ImportResult.IMPORT_NOTHING_NEW
-                    imported == notes.size -> ImportResult.IMPORT_OK
-                    else -> ImportResult.IMPORT_PARTIAL
+                note.notebookId = targetNotebookId
+
+                val existingNoteId = activity.notesDB.getNoteIdWithTitleInNotebook(note.title, targetNotebookId)
+                if (existingNoteId != null) {
+                    val existingNote = activity.notesDB.getNoteWithId(existingNoteId)
+                    if (existingNote != null && existingNote.value == note.value) {
+                        skipped++
+                    } else {
+                        // Duplicate title but different content -> Rename and import
+                        var newTitle = note.title
+                        var i = 1
+                        while (activity.notesDB.getNoteIdWithTitleInNotebook(newTitle, targetNotebookId) != null) {
+                            newTitle = "${note.title} ($i)"
+                            i++
+                        }
+                        note.title = newTitle
+                        activity.notesDB.insertOrUpdate(note)
+                        imported++
+                    }
+                } else {
+                    activity.notesDB.insertOrUpdate(note)
+                    imported++
                 }
-                callback(result)
             }
+
+            val result = when {
+                imported == 0 && skipped > 0 -> ImportResult.IMPORT_NOTHING_NEW
+                imported > 0 -> ImportResult.IMPORT_OK
+                else -> ImportResult.IMPORT_FAIL
+            }
+            callback(result)
         }
     }
 
     fun exportNotes(notesToBackup: List<Note>, outputStream: OutputStream): ExportResult {
         return try {
-            val jsonString = Json.encodeToString(notesToBackup)
+            val notebooks = context.notebooksDB.getNotebooks()
+            val notebooksById = notebooks.associateBy { it.id }
+            notesToBackup.forEach {
+                it.notebookTitle = notebooksById[it.notebookId]?.title
+            }
+
+            val config = context.config
+            val settings = BackupSettings(
+                autosaveNotes = config.autosaveNotes,
+                displaySuccess = config.displaySuccess,
+                clickableLinks = config.clickableLinks,
+                monospacedFont = config.monospacedFont,
+                showKeyboard = config.showKeyboard,
+                showNotePicker = config.showNotePicker,
+                showWordCount = config.showWordCount,
+                gravity = config.gravity,
+                placeCursorToEnd = config.placeCursorToEnd,
+                enableLineWrap = config.enableLineWrap,
+                useIncognitoMode = config.useIncognitoMode,
+                lastCreatedNoteType = config.lastCreatedNoteType,
+                moveDoneChecklistItems = config.moveDoneChecklistItems,
+                fontSizePercentage = config.fontSizePercentage,
+                addNewChecklistItemsTop = config.addNewChecklistItemsTop,
+                notebookColumns = config.notebookColumns
+            )
+            val backupData = BackupData(notesToBackup, notebooks, settings)
+
+            val jsonString = Json.encodeToString(backupData)
             outputStream.use {
                 it.write(jsonString.toByteArray())
             }
             ExportResult.EXPORT_OK
-        } catch (_: Error) {
+        } catch (e: Exception) {
             ExportResult.EXPORT_FAIL
         }
     }

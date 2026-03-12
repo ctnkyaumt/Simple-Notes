@@ -18,7 +18,9 @@ import com.simplemobiletools.notes.pro.dialogs.ManageAutoBackupsDialog
 import com.simplemobiletools.notes.pro.extensions.*
 import com.simplemobiletools.notes.pro.helpers.*
 import com.simplemobiletools.notes.pro.models.Note
+import com.simplemobiletools.notes.pro.models.Notebook
 import com.simplemobiletools.notes.pro.models.Widget
+import com.simplemobiletools.notes.pro.models.BackupData
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -328,16 +330,22 @@ class SettingsActivity : SimpleActivity() {
         if (notes.isEmpty()) {
             toast(com.simplemobiletools.commons.R.string.no_entries_for_exporting)
         } else {
-            try {
-                val outputStream = contentResolver.openOutputStream(uri)!!
-
-                val jsonString = Json.encodeToString(notes)
-                outputStream.use {
-                    it.write(jsonString.toByteArray())
+            ensureBackgroundThread {
+                val result = try {
+                    val outputStream = contentResolver.openOutputStream(uri)!!
+                    NotesHelper(this).exportNotes(notes, outputStream)
+                } catch (e: Exception) {
+                    showErrorToast(e)
+                    ExportResult.EXPORT_FAIL
                 }
-                toast(com.simplemobiletools.commons.R.string.exporting_successful)
-            } catch (e: Exception) {
-                showErrorToast(e)
+
+                runOnUiThread {
+                    if (result == ExportResult.EXPORT_OK) {
+                        toast(com.simplemobiletools.commons.R.string.exporting_successful)
+                    } else {
+                        toast(com.simplemobiletools.commons.R.string.exporting_failed)
+                    }
+                }
             }
         }
     }
@@ -347,12 +355,42 @@ class SettingsActivity : SimpleActivity() {
             val jsonString = contentResolver.openInputStream(uri)!!.use { inputStream ->
                 inputStream.bufferedReader().readText()
             }
-            val objects = Json.decodeFromString<List<Note>>(jsonString)
-            if (objects.isEmpty()) {
+            
+            var notes: List<Note>
+            var notebooks: List<Notebook> = emptyList()
+            try {
+                // Try parsing as BackupData (new format)
+                val backupData = Json.decodeFromString<BackupData>(jsonString)
+                notes = backupData.notes
+                notebooks = backupData.notebooks
+                backupData.settings?.let { settings ->
+                    config.autosaveNotes = settings.autosaveNotes
+                    config.displaySuccess = settings.displaySuccess
+                    config.clickableLinks = settings.clickableLinks
+                    config.monospacedFont = settings.monospacedFont
+                    config.showKeyboard = settings.showKeyboard
+                    config.showNotePicker = settings.showNotePicker
+                    config.showWordCount = settings.showWordCount
+                    config.gravity = settings.gravity
+                    config.placeCursorToEnd = settings.placeCursorToEnd
+                    config.enableLineWrap = settings.enableLineWrap
+                    config.useIncognitoMode = settings.useIncognitoMode
+                    config.lastCreatedNoteType = settings.lastCreatedNoteType
+                    config.moveDoneChecklistItems = settings.moveDoneChecklistItems
+                    config.fontSizePercentage = settings.fontSizePercentage
+                    config.addNewChecklistItemsTop = settings.addNewChecklistItemsTop
+                    config.notebookColumns = settings.notebookColumns
+                }
+            } catch (e: Exception) {
+                // Fallback to List<Note> (old format)
+                notes = Json.decodeFromString<List<Note>>(jsonString)
+            }
+
+            if (notes.isEmpty()) {
                 toast(com.simplemobiletools.commons.R.string.no_entries_for_importing)
                 return
             }
-            NotesHelper(this).importNotes(this, objects) { importResult ->
+            NotesHelper(this).importNotes(this, notes, notebooks) { importResult ->
                 when (importResult) {
                     NotesHelper.ImportResult.IMPORT_OK -> toast(com.simplemobiletools.commons.R.string.importing_successful)
                     NotesHelper.ImportResult.IMPORT_PARTIAL -> toast(com.simplemobiletools.commons.R.string.importing_some_entries_failed)
