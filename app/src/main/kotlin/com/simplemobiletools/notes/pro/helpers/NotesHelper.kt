@@ -131,6 +131,13 @@ class NotesHelper(val context: Context) {
 
     fun importNotes(activity: BaseSimpleActivity, notes: List<Note>, callback: (ImportResult) -> Unit) {
         ensureBackgroundThread {
+            notes.forEach {
+                // we need to reset the ID to avoid overwriting existing notes with the same ID
+                it.id = null
+                // we need to set the notebook ID to the default one, as the imported notebook ID might not exist
+                it.notebookId = 1L
+            }
+
             val currentNotes = activity.notesDB.getNotes()
             if (currentNotes.isEmpty()) {
                 insertOrUpdateNotes(notes) { savedNotes ->
