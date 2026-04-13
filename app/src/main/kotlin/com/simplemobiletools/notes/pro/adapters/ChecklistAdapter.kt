@@ -78,9 +78,13 @@ class ChecklistAdapter(
 
     override fun getItemKeyPosition(key: Int) = items.indexOfFirst { it.id == key }
 
-    override fun onActionModeCreated() {}
+    override fun onActionModeCreated() {
+        notifyDataSetChanged()
+    }
 
-    override fun onActionModeDestroyed() {}
+    override fun onActionModeDestroyed() {
+        notifyDataSetChanged()
+    }
 
     override fun prepareActionMode(menu: Menu) {
         val selectedItems = getSelectedItems()
