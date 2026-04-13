@@ -34,13 +34,14 @@ class MigrateChecklistItemsDialog(
 
     private fun initDialog() {
         val binding = DialogMigrateNoteBinding.inflate(activity.layoutInflater)
-        
+
         binding.migrateNoteList.adapter = MigrateNoteAdapter(
             activity = activity,
             notes = allNotes,
             notebooks = allNotebooks,
-            onItemClick = { note ->
-                callback(note.id!!)
+            recyclerView = binding.migrateNoteList,
+            itemClick = { note ->
+                callback((note as Note).id!!)
                 dialog?.dismiss()
             }
         )

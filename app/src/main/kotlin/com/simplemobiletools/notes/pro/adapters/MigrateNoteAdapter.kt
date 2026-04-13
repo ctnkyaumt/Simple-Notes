@@ -4,6 +4,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.simplemobiletools.commons.activities.BaseSimpleActivity
 import com.simplemobiletools.commons.adapters.MyRecyclerViewAdapter
+import com.simplemobiletools.commons.extensions.beVisibleIf
 import com.simplemobiletools.commons.views.MyRecyclerView
 import com.simplemobiletools.notes.pro.databinding.ItemMigrateNoteBinding
 import com.simplemobiletools.notes.pro.models.Note
@@ -14,9 +15,10 @@ class MigrateNoteAdapter(
     private val notes: List<Note>,
     private val notebooks: List<Notebook>,
     recyclerView: MyRecyclerView,
-    private val onItemClick: (Note) -> Unit
-) : MyRecyclerViewAdapter(activity, recyclerView, onItemClick) {
+    itemClick: (Any) -> Unit
+) : MyRecyclerViewAdapter(activity, recyclerView, itemClick) {
 
+    private val onItemClick = itemClick as (Note) -> Unit
     private val notebookMap = notebooks.associateBy { it.id }
 
     override fun getActionMenuId() = 0
