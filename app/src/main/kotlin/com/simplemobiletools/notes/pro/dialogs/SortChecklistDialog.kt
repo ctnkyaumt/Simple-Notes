@@ -8,6 +8,7 @@ import com.simplemobiletools.commons.helpers.SORT_BY_DATE_CREATED
 import com.simplemobiletools.commons.helpers.SORT_BY_TITLE
 import com.simplemobiletools.commons.helpers.SORT_DESCENDING
 import com.simplemobiletools.notes.pro.R
+import com.simplemobiletools.notes.pro.helpers.SORT_BY_DONE
 import com.simplemobiletools.notes.pro.activities.SimpleActivity
 import com.simplemobiletools.notes.pro.databinding.DialogSortChecklistBinding
 import com.simplemobiletools.notes.pro.extensions.config
@@ -47,6 +48,10 @@ class SortChecklistDialog(private val activity: SimpleActivity, private val call
             fieldBtn = binding.sortingDialogRadioDateCreated
         }
 
+        if (currSorting and SORT_BY_DONE != 0) {
+            fieldBtn = binding.sortingDialogRadioDone
+        }
+
         if (currSorting and SORT_BY_CUSTOM != 0) {
             fieldBtn = binding.sortingDialogRadioCustom
         }
@@ -75,6 +80,7 @@ class SortChecklistDialog(private val activity: SimpleActivity, private val call
         val sortingRadio = binding.sortingDialogRadioSorting
         var sorting = when (sortingRadio.checkedRadioButtonId) {
             R.id.sorting_dialog_radio_date_created -> SORT_BY_DATE_CREATED
+            R.id.sorting_dialog_radio_done -> SORT_BY_DONE
             R.id.sorting_dialog_radio_custom -> SORT_BY_CUSTOM
             else -> SORT_BY_TITLE
         }

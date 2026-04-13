@@ -39,6 +39,7 @@ const val ENABLE_LINE_WRAP = "enable_line_wrap"
 const val USE_INCOGNITO_MODE = "use_incognito_mode"
 const val LAST_CREATED_NOTE_TYPE = "last_created_note_type"
 const val MOVE_DONE_CHECKLIST_ITEMS = "move_undone_checklist_items"     // it has been replaced from moving undone items at the top to moving done to bottom
+const val SORT_BY_DONE = 8
 const val FONT_SIZE_PERCENTAGE = "font_size_percentage"
 const val EXPORT_MIME_TYPE = "text/plain"
 const val ADD_NEW_CHECKLIST_ITEMS_TOP = "add_new_checklist_items_top"

@@ -3,6 +3,7 @@ package com.simplemobiletools.notes.pro.models
 import com.simplemobiletools.commons.helpers.SORT_BY_TITLE
 import com.simplemobiletools.commons.helpers.SORT_DESCENDING
 import com.simplemobiletools.notes.pro.helpers.CollatorBasedComparator
+import com.simplemobiletools.notes.pro.helpers.SORT_BY_DONE
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -19,6 +20,7 @@ data class ChecklistItem(
 
     override fun compareTo(other: ChecklistItem): Int {
         var result = when {
+            sorting and SORT_BY_DONE != 0 -> isDone.compareTo(other.isDone)
             sorting and SORT_BY_TITLE != 0 -> CollatorBasedComparator().compare(title, other.title)
             else -> dateCreated.compareTo(other.dateCreated)
         }

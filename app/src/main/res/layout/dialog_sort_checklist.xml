@@ -32,6 +32,14 @@
             android:text="@string/date_created" />
 
         <com.simplemobiletools.commons.views.MyCompatRadioButton
+            android:id="@+id/sorting_dialog_radio_done"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="@dimen/normal_margin"
+            android:paddingBottom="@dimen/normal_margin"
+            android:text="@string/done_status" />
+
+        <com.simplemobiletools.commons.views.MyCompatRadioButton
             android:id="@+id/sorting_dialog_radio_custom"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
