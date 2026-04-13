@@ -1,6 +1,7 @@
 package com.simplemobiletools.notes.pro.dialogs
 
 import androidx.appcompat.app.AlertDialog
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.simplemobiletools.commons.activities.BaseSimpleActivity
 import com.simplemobiletools.commons.extensions.getAlertDialogBuilder
 import com.simplemobiletools.commons.extensions.setupDialogStuff
@@ -35,6 +36,12 @@ class MigrateChecklistItemsDialog(
     private fun initDialog() {
         val binding = DialogMigrateNoteBinding.inflate(activity.layoutInflater)
 
+        if (allNotes.isEmpty()) {
+            binding.migrateNoteList.beGone()
+            activity.toast(R.string.only_checklist_notes)
+        }
+
+        binding.migrateNoteList.layoutManager = LinearLayoutManager(activity)
         binding.migrateNoteList.adapter = MigrateNoteAdapter(
             activity = activity,
             notes = allNotes,

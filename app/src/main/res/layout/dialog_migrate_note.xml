@@ -11,7 +11,8 @@
     <com.simplemobiletools.commons.views.MyRecyclerView
         android:id="@+id/migrate_note_list"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_marginTop="@dimen/medium_margin" />
 
 </LinearLayout>
