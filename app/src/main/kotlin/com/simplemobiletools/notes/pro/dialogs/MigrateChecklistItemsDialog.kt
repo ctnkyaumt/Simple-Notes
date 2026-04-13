@@ -3,8 +3,10 @@ package com.simplemobiletools.notes.pro.dialogs
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.simplemobiletools.commons.activities.BaseSimpleActivity
+import com.simplemobiletools.commons.extensions.beGone
 import com.simplemobiletools.commons.extensions.getAlertDialogBuilder
 import com.simplemobiletools.commons.extensions.setupDialogStuff
+import com.simplemobiletools.commons.extensions.toast
 import com.simplemobiletools.notes.pro.R
 import com.simplemobiletools.notes.pro.adapters.MigrateNoteAdapter
 import com.simplemobiletools.notes.pro.databinding.DialogMigrateNoteBinding
