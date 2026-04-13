@@ -82,6 +82,10 @@
     <string name="move_done_checklist_items">Move done checklist items to the bottom</string>
     <string name="add_new_checklist_items_top">Add new checklist items at the top</string>
     <string name="done_status">Done status</string>
+    <string name="migrate">Migrate</string>
+    <string name="migrate_to_note">Migrate to note</string>
+    <string name="select_target_note">Select target note</string>
+    <string name="only_checklist_notes">Only checklist notes can receive migrated items</string>
 
     <!-- Checklists -->
     <string name="checklist">Checklist</string>

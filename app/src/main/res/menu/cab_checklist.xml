@@ -22,6 +22,12 @@
         android:title="@string/rename"
         app:showAsAction="always" />
     <item
+        android:id="@+id/cab_migrate"
+        android:icon="@drawable/ic_folder_vector"
+        android:showAsAction="always"
+        android:title="@string/migrate"
+        app:showAsAction="always" />
+    <item
         android:id="@+id/cab_delete"
         android:icon="@drawable/ic_delete_vector"
         android:showAsAction="always"

@@ -15,6 +15,7 @@ import com.simplemobiletools.notes.pro.activities.SimpleActivity
 import com.simplemobiletools.notes.pro.adapters.ChecklistAdapter
 import com.simplemobiletools.notes.pro.databinding.FragmentChecklistBinding
 import com.simplemobiletools.notes.pro.dialogs.NewChecklistItemDialog
+import com.simplemobiletools.notes.pro.dialogs.MigrateChecklistItemsDialog
 import com.simplemobiletools.notes.pro.extensions.config
 import com.simplemobiletools.notes.pro.extensions.updateWidgets
 import com.simplemobiletools.notes.pro.helpers.NOTE_ID
@@ -243,6 +244,54 @@ class ChecklistFragment : NoteFragment(), ChecklistItemsListener {
     override fun refreshItems() {
         loadNoteById(noteId)
         setupAdapter()
+    }
+
+    override fun migrateChecklistItems(itemIds: List<Int>) {
+        MigrateChecklistItemsDialog(requireActivity() as SimpleActivity, noteId) { targetNoteId ->
+            performMigration(itemIds, targetNoteId)
+        }
+    }
+
+    private fun performMigration(itemIds: List<Int>, targetNoteId: Long) {
+        val itemsToMigrate = items.filter { it.id in itemIds }
+        
+        NotesHelper(requireActivity()).getNoteWithId(targetNoteId) { targetNote ->
+            if (targetNote == null) {
+                return@getNoteWithId
+            }
+
+            // Get target note's current checklist items
+            val targetItems = try {
+                val checklistItemType = object : TypeToken<List<ChecklistItem>>() {}.type
+                Gson().fromJson<ArrayList<ChecklistItem>>(targetNote.getNoteStoredValue(requireActivity()), checklistItemType) ?: ArrayList(1)
+            } catch (e: Exception) {
+                ArrayList(1)
+            }
+
+            // Find max ID in target note to avoid conflicts
+            val maxTargetId = targetItems.maxByOrNull { it.id }?.id ?: 0
+            var newId = maxTargetId + 1
+
+            // Add migrated items to target note with new IDs
+            val migratedItems = itemsToMigrate.map { 
+                ChecklistItem(newId++, it.dateCreated, it.title, it.isDone)
+            }
+            targetItems.addAll(migratedItems)
+            targetNote.value = Gson().toJson(targetItems)
+
+            // Save target note
+            ensureBackgroundThread {
+                saveNoteValue(targetNote, targetNote.value)
+                
+                // Remove items from current note
+                activity?.runOnUiThread {
+                    items.removeAll(itemsToMigrate)
+                    saveNote()
+                    setupAdapter()
+                    context?.updateWidgets()
+                }
+            }
+        }
     }
 
     private fun FragmentChecklistBinding.toCommonBinding(): CommonNoteBinding = this.let {

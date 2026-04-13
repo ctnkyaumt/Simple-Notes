@@ -66,6 +66,7 @@ class ChecklistAdapter(
             R.id.cab_move_to_top -> moveSelectedItemsToTop()
             R.id.cab_move_to_bottom -> moveSelectedItemsToBottom()
             R.id.cab_rename -> renameChecklistItem()
+            R.id.cab_migrate -> migrateSelectedItems()
             R.id.cab_delete -> deleteSelection()
         }
     }
@@ -130,6 +131,11 @@ class ChecklistAdapter(
             notifyItemChanged(position)
             finishActMode()
         }
+    }
+
+    private fun migrateSelectedItems() {
+        listener?.migrateChecklistItems(selectedKeys.toList())
+        finishActMode()
     }
 
     private fun deleteSelection() {
