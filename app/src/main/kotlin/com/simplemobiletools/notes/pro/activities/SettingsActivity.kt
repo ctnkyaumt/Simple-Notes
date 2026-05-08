@@ -352,10 +352,12 @@ class SettingsActivity : SimpleActivity() {
 
     private fun importNotes(uri: Uri) {
         try {
-            val jsonString = contentResolver.openInputStream(uri)!!.use { inputStream ->
+            val fileContent = contentResolver.openInputStream(uri)!!.use { inputStream ->
                 inputStream.bufferedReader().readText()
             }
-            
+
+            val jsonString = NotesEncryptionHelper.decrypt(fileContent) ?: fileContent
+
             var notes: List<Note>
             var notebooks: List<Notebook> = emptyList()
             try {

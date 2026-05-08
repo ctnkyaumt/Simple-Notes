@@ -242,8 +242,9 @@ class NotesHelper(val context: Context) {
             val backupData = BackupData(notesToBackup, notebooks, settings)
 
             val jsonString = Json.encodeToString(backupData)
+            val encryptedString = NotesEncryptionHelper.encrypt(jsonString)
             outputStream.use {
-                it.write(jsonString.toByteArray())
+                it.write(encryptedString.toByteArray(Charsets.UTF_8))
             }
             ExportResult.EXPORT_OK
         } catch (e: Exception) {
