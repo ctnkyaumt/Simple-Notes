@@ -87,7 +87,6 @@
     <string name="select_target_note">Select target note</string>
     <string name="only_checklist_notes">Only checklist notes can receive moved items</string>
     <string name="select_target_notebook">Select target notebook</string>
-    <string name="create_new_note">Create new note</string>
     <string name="move_entire_note">Move entire note to another notebook</string>
     <string name="note_moved_successfully">Note moved successfully</string>
     <string name="items_moved_successfully">Items moved successfully</string>
