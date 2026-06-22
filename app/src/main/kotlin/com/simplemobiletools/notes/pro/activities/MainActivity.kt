@@ -31,10 +31,8 @@ import androidx.viewpager.widget.ViewPager
 import com.simplemobiletools.commons.dialogs.*
 import com.simplemobiletools.commons.extensions.*
 import com.simplemobiletools.commons.helpers.*
-import com.simplemobiletools.commons.models.FAQItem
 import com.simplemobiletools.commons.models.FileDirItem
 import com.simplemobiletools.commons.models.RadioItem
-import com.simplemobiletools.commons.models.Release
 import com.simplemobiletools.commons.views.MyEditText
 import com.simplemobiletools.notes.pro.BuildConfig
 import com.simplemobiletools.notes.pro.R
@@ -93,7 +91,6 @@ class MainActivity : SimpleActivity() {
         isMaterialActivity = true
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-        appLaunched(BuildConfig.APPLICATION_ID)
         setupOptionsMenu()
         refreshMenuItems()
 
@@ -130,7 +127,6 @@ class MainActivity : SimpleActivity() {
 
         val hasNoIntent = intent.action.isNullOrEmpty() && noteToOpen == -1L
 
-        checkWhatsNewDialog()
         checkIntents(intent)
 
         storeStateVariables()
@@ -140,13 +136,7 @@ class MainActivity : SimpleActivity() {
 
         wasInit = true
 
-        checkAppOnSDCard()
         setupSearchButtons()
-
-        if (isPackageInstalled("com.simplemobiletools.notes")) {
-            val dialogText = getString(com.simplemobiletools.commons.R.string.upgraded_from_free_notes)
-            ConfirmationDialog(this, dialogText, 0, com.simplemobiletools.commons.R.string.ok, 0, false) {}
-        }
     }
 
     override fun onResume() {
@@ -1445,25 +1435,6 @@ class MainActivity : SimpleActivity() {
             if (shouldRecreateMenu) {
                 refreshMenuItems()
             }
-        }
-    }
-
-    private fun checkWhatsNewDialog() {
-        arrayListOf<Release>().apply {
-            add(Release(25, R.string.release_25))
-            add(Release(28, R.string.release_28))
-            add(Release(29, R.string.release_29))
-            add(Release(39, R.string.release_39))
-            add(Release(45, R.string.release_45))
-            add(Release(49, R.string.release_49))
-            add(Release(51, R.string.release_51))
-            add(Release(57, R.string.release_57))
-            add(Release(62, R.string.release_62))
-            add(Release(64, R.string.release_64))
-            add(Release(67, R.string.release_67))
-            add(Release(81, R.string.release_81))
-            add(Release(86, R.string.release_86))
-            checkWhatsNew(this, BuildConfig.VERSION_CODE)
         }
     }
 
