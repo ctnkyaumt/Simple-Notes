@@ -6,4 +6,6 @@ interface ChecklistItemsListener {
     fun saveChecklist(callback: () -> Unit = {})
 
     fun migrateChecklistItems(itemIds: List<Int>)
+
+    fun moveEntireNote()
 }

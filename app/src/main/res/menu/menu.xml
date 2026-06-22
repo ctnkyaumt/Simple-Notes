@@ -79,6 +79,11 @@
         android:title="@string/print"
         app:showAsAction="never" />
     <item
+        android:id="@+id/move_note"
+        android:icon="@drawable/ic_move_note_vector"
+        android:title="@string/move_entire_note"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/delete_note"
         android:icon="@drawable/ic_delete_vector"
         android:title="@string/delete_note"

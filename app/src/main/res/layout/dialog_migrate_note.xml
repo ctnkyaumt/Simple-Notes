@@ -15,4 +15,13 @@
         android:layout_weight="1"
         android:layout_marginTop="@dimen/medium_margin" />
 
+    <com.simplemobiletools.commons.views.MyButton
+        android:id="@+id/create_new_note_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/medium_margin"
+        android:layout_marginBottom="@dimen/small_margin"
+        android:text="@string/create_new_note"
+        android:visibility="gone" />
+
 </LinearLayout>

@@ -23,9 +23,9 @@
         app:showAsAction="always" />
     <item
         android:id="@+id/cab_migrate"
-        android:icon="@drawable/ic_share_vector"
+        android:icon="@drawable/ic_move_note_vector"
         android:showAsAction="always"
-        android:title="@string/migrate"
+        android:title="@string/move_to_note"
         app:showAsAction="always" />
     <item
         android:id="@+id/cab_delete"

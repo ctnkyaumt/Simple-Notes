@@ -83,9 +83,14 @@
     <string name="add_new_checklist_items_top">Add new checklist items at the top</string>
     <string name="done_status">Done status</string>
     <string name="migrate">Migrate</string>
-    <string name="migrate_to_note">Migrate to note</string>
+    <string name="move_to_note">Move to note</string>
     <string name="select_target_note">Select target note</string>
-    <string name="only_checklist_notes">Only checklist notes can receive migrated items</string>
+    <string name="only_checklist_notes">Only checklist notes can receive moved items</string>
+    <string name="select_target_notebook">Select target notebook</string>
+    <string name="create_new_note">Create new note</string>
+    <string name="move_entire_note">Move entire note to another notebook</string>
+    <string name="note_moved_successfully">Note moved successfully</string>
+    <string name="items_moved_successfully">Items moved successfully</string>
 
     <!-- Checklists -->
     <string name="checklist">Checklist</string>

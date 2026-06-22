@@ -225,6 +225,7 @@ class MainActivity : SimpleActivity() {
             findItem(R.id.unlock_note).isVisible = mNotes.isNotEmpty() && (::mCurrentNote.isInitialized && mCurrentNote.isLocked())
 
             findItem(R.id.new_note).isVisible = !isGeneralNotebook()
+            findItem(R.id.move_note).isVisible = !isGeneralNotebook() && mNotes.isNotEmpty()
 
             saveNoteButton = findItem(R.id.save_note)
             saveNoteButton!!.isVisible =
@@ -257,6 +258,7 @@ class MainActivity : SimpleActivity() {
                 R.id.import_folder -> openFolder()
                 R.id.export_as_file -> fragment?.handleUnlocking { tryExportAsFile() }
                 R.id.print -> fragment?.handleUnlocking { printText() }
+                R.id.move_note -> fragment?.handleUnlocking { moveNoteToNotebook() }
                 R.id.delete_note -> fragment?.handleUnlocking { displayDeleteNotePrompt() }
                 R.id.settings -> launchSettings()
                 R.id.about -> launchAbout()
@@ -1473,6 +1475,34 @@ class MainActivity : SimpleActivity() {
         SortChecklistDialog(this) {
             getPagerAdapter().refreshChecklist(binding.viewPager.currentItem)
             updateWidgets()
+        }
+    }
+
+    fun onMoveNoteRequested() {
+        moveNoteToNotebook()
+    }
+
+    private fun moveNoteToNotebook() {
+        NotebooksHelper(this).getNotebooks { notebooks ->
+            val otherNotebooks = notebooks.filter { it.id != currentNotebookId && it.id != 1L }
+            if (otherNotebooks.isEmpty()) {
+                toast(R.string.cannot_create_notes_in_general_notebook)
+                return@getNotebooks
+            }
+
+            val notebookNames = otherNotebooks.map { it.title }.toTypedArray()
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(R.string.select_target_notebook)
+                .setItems(notebookNames) { _, which ->
+                    val targetNotebook = otherNotebooks[which]
+                    mCurrentNote.notebookId = targetNotebook.id!!
+                    NotesHelper(this).insertOrUpdateNote(mCurrentNote) {
+                        toast(R.string.note_moved_successfully)
+                        initViewPager()
+                    }
+                }
+                .setNegativeButton(com.simplemobiletools.commons.R.string.cancel, null)
+                .show()
         }
     }
 }

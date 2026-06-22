@@ -11,6 +11,8 @@ import com.google.gson.reflect.TypeToken
 import com.simplemobiletools.commons.extensions.*
 import com.simplemobiletools.commons.helpers.SORT_BY_CUSTOM
 import com.simplemobiletools.commons.helpers.ensureBackgroundThread
+import com.simplemobiletools.notes.pro.R
+import com.simplemobiletools.notes.pro.activities.MainActivity
 import com.simplemobiletools.notes.pro.activities.SimpleActivity
 import com.simplemobiletools.notes.pro.adapters.ChecklistAdapter
 import com.simplemobiletools.notes.pro.databinding.FragmentChecklistBinding
@@ -252,6 +254,13 @@ class ChecklistFragment : NoteFragment(), ChecklistItemsListener {
         }
     }
 
+    override fun moveEntireNote() {
+        (requireActivity() as? MainActivity)?.let { mainActivity ->
+            // Delegate to the main activity's move note to notebook functionality
+            mainActivity.onMoveNoteRequested()
+        }
+    }
+
     private fun performMigration(itemIds: List<Int>, targetNoteId: Long) {
         val itemsToMigrate = items.filter { it.id in itemIds }
         
@@ -289,6 +298,7 @@ class ChecklistFragment : NoteFragment(), ChecklistItemsListener {
                     saveNote()
                     setupAdapter()
                     context?.updateWidgets()
+                    activity?.toast(R.string.items_moved_successfully)
                 }
             }
         }

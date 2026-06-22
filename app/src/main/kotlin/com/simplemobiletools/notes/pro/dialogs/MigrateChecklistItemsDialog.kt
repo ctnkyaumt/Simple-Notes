@@ -1,12 +1,15 @@
 package com.simplemobiletools.notes.pro.dialogs
 
+import android.widget.ArrayAdapter
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.simplemobiletools.commons.activities.BaseSimpleActivity
 import com.simplemobiletools.commons.extensions.beGone
+import com.simplemobiletools.commons.extensions.beVisible
 import com.simplemobiletools.commons.extensions.getAlertDialogBuilder
 import com.simplemobiletools.commons.extensions.setupDialogStuff
 import com.simplemobiletools.commons.extensions.toast
+import com.simplemobiletools.commons.helpers.PROTECTION_NONE
 import com.simplemobiletools.notes.pro.R
 import com.simplemobiletools.notes.pro.adapters.MigrateNoteAdapter
 import com.simplemobiletools.notes.pro.databinding.DialogMigrateNoteBinding
@@ -19,6 +22,7 @@ import com.simplemobiletools.notes.pro.models.NoteType
 class MigrateChecklistItemsDialog(
     val activity: BaseSimpleActivity,
     private val currentNoteId: Long,
+    private val requireChecklist: Boolean = true,
     val callback: (targetNoteId: Long) -> Unit
 ) {
     private var dialog: AlertDialog? = null
@@ -29,7 +33,11 @@ class MigrateChecklistItemsDialog(
         NotebooksHelper(activity).getNotebooks { notebooks ->
             allNotebooks = notebooks.toMutableList()
             NotesHelper(activity).getNotes { notes ->
-                allNotes = notes.filter { it.id != currentNoteId && it.type == NoteType.TYPE_CHECKLIST }.toMutableList()
+                allNotes = if (requireChecklist) {
+                    notes.filter { it.id != currentNoteId && it.type == NoteType.TYPE_CHECKLIST }.toMutableList()
+                } else {
+                    notes.filter { it.id != currentNoteId }.toMutableList()
+                }
                 initDialog()
             }
         }
@@ -40,7 +48,6 @@ class MigrateChecklistItemsDialog(
 
         if (allNotes.isEmpty()) {
             binding.migrateNoteList.beGone()
-            activity.toast(R.string.only_checklist_notes)
         }
 
         binding.migrateNoteList.layoutManager = LinearLayoutManager(activity)
@@ -55,6 +62,13 @@ class MigrateChecklistItemsDialog(
             }
         )
 
+        // Setup the "Create new note" button
+        binding.createNewNoteButton.beVisible()
+        binding.createNewNoteButton.setOnClickListener {
+            dialog?.dismiss()
+            showCreateNewNoteDialog()
+        }
+
         activity.getAlertDialogBuilder()
             .setNegativeButton(com.simplemobiletools.commons.R.string.cancel, null)
             .apply {
@@ -62,5 +76,37 @@ class MigrateChecklistItemsDialog(
                     dialog = alertDialog
                 }
             }
+    }
+
+    private fun showCreateNewNoteDialog() {
+        // Let user pick a notebook first, then create a note in it
+        val notebookNames = allNotebooks.filter { it.id != 1L }.map { it.title }.toTypedArray()
+        val notebookIds = allNotebooks.filter { it.id != 1L }.map { it.id }
+
+        if (notebookNames.isEmpty()) {
+            activity.toast(R.string.cannot_create_notes_in_general_notebook)
+            return
+        }
+
+        val adapter = ArrayAdapter(activity, android.R.layout.select_dialog_singlechoice, notebookNames)
+        AlertDialog.Builder(activity)
+            .setTitle(R.string.select_target_notebook)
+            .setAdapter(adapter) { _, which ->
+                val selectedNotebookId = notebookIds[which]!!
+                // Now show the new note dialog for this notebook
+                NewNoteDialog(
+                    activity = activity,
+                    title = null,
+                    setChecklistAsDefault = requireChecklist,
+                    notebookId = selectedNotebookId,
+                    callback = { newNote ->
+                        NotesHelper(activity).insertOrUpdateNote(newNote) { newNoteId ->
+                            callback(newNoteId)
+                        }
+                    }
+                )
+            }
+            .setNegativeButton(com.simplemobiletools.commons.R.string.cancel, null)
+            .show()
     }
 }
